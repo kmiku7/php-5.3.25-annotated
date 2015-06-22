@@ -533,6 +533,7 @@ typedef int (*zend_write_func_t)(const char *str, uint str_length);
 #define IS_OBJECT	5
 #define IS_STRING	6
 #define IS_RESOURCE	7
+// 这两种类型是?
 #define IS_CONSTANT	8
 #define IS_CONSTANT_ARRAY	9
 
@@ -681,8 +682,10 @@ END_EXTERN_C()
 	(z)->refcount__gc = 1;	\
 	(z)->is_ref__gc = 0;
 
+// 参见zend.c line:665, 多了设置变量为NULL
 #define INIT_ZVAL(z) z = zval_used_for_init;
 
+// 这两个宏的差别在于第二步,
 #define ALLOC_INIT_ZVAL(zp)						\
 	ALLOC_ZVAL(zp);		\
 	INIT_ZVAL(*zp);

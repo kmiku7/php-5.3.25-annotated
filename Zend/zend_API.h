@@ -541,6 +541,8 @@ END_EXTERN_C()
 		Z_DVAL_P(z) = d;			\
 	}
 
+// STRING 相关的值操作
+// 到底包括尾部的\0吗?
 #define ZVAL_STRING(z, s, duplicate) {	\
 		const char *__s=(s);			\
 		Z_STRLEN_P(z) = strlen(__s);	\
@@ -561,6 +563,8 @@ END_EXTERN_C()
 		Z_TYPE_P(z) = IS_STRING;	\
 	}
 
+// zval值拷贝
+//	先备份left的rc相关字段,然后全量覆盖,再恢复
 #define ZVAL_ZVAL(z, zv, copy, dtor) {			\
 		zend_uchar is_ref = Z_ISREF_P(z);		\
 		zend_uint refcount = Z_REFCOUNT_P(z);	\
@@ -581,6 +585,8 @@ END_EXTERN_C()
 #define ZVAL_FALSE(z)  					ZVAL_BOOL(z, 0)
 #define ZVAL_TRUE(z)  					ZVAL_BOOL(z, 1)
 
+// 返回值的名字总是叫return_value, 因此这个名字也是不能用的
+// 两组宏的区别在于会不会return
 #define RETVAL_RESOURCE(l)				ZVAL_RESOURCE(return_value, l)
 #define RETVAL_BOOL(b)					ZVAL_BOOL(return_value, b)
 #define RETVAL_NULL() 					ZVAL_NULL(return_value)

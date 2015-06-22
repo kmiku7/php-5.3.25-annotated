@@ -181,6 +181,7 @@ struct _zend_executor_globals {
 	zend_op **opline_ptr;
 
 	HashTable *active_symbol_table;
+	// 这个是?
 	HashTable symbol_table;		/* main symbol table */
 
 	// 每个compile的文件都会加入(?)

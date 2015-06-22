@@ -98,6 +98,7 @@ zend_vm_enter:
 	EX(function_state).function = (zend_function *) op_array;
 	EX(function_state).arguments = NULL;
 	
+	// 这个循环没看明白.
 	while (1) {
     	int ret;
 #ifdef ZEND_WIN32

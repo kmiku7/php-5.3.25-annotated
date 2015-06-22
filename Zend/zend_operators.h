@@ -278,6 +278,7 @@ BEGIN_EXTERN_C()
 ZEND_API int increment_function(zval *op1);
 ZEND_API int decrement_function(zval *op2);
 
+// 这组函数转换的是对象本身!
 ZEND_API void convert_scalar_to_number(zval *op TSRMLS_DC);
 ZEND_API void _convert_to_string(zval *op ZEND_FILE_LINE_DC);
 ZEND_API void convert_to_long(zval *op);

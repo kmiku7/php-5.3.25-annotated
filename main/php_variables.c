@@ -766,6 +766,7 @@ int php_hash_environment(TSRMLS_D)
 		php_build_argv(SG(request_info).query_string, PG(http_globals)[TRACK_VARS_SERVER] TSRMLS_CC);
 	}
 
+	// 值从哪里来?
 	for (i=0; i<num_track_vars; i++) {
 		if (jit_initialization && auto_global_records[i].jit_initialization) {
 			continue;
