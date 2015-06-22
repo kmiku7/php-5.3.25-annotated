@@ -53,9 +53,12 @@
 typedef struct _zend_op_array zend_op_array;
 typedef struct _zend_op zend_op;
 
+// in/out对应的对象
 typedef struct _znode {
+	// 操作数类型,
 	int op_type;
 	union {
+		// IS_CONST
 		zval constant;
 
 		zend_uint var;
@@ -79,13 +82,19 @@ typedef int (ZEND_FASTCALL *opcode_handler_t) (ZEND_OPCODE_HANDLER_ARGS);
 
 extern ZEND_API opcode_handler_t *zend_opcode_handlers;
 
+// 该结构维护编译后的每条opcode的信息
 struct _zend_op {
+	// 该操作码对应的执行句柄
+	// 定义在zend_vm_execute.h中
 	opcode_handler_t handler;
 	znode result;
 	znode op1;
 	znode op2;
 	ulong extended_value;
+	// 对应的行号
 	uint lineno;
+	// 操作码
+	//zend_vm_opcodes.h中定义
 	zend_uchar opcode;
 };
 
@@ -189,9 +198,12 @@ typedef struct _zend_compiled_variable {
 	ulong hash_value;
 } zend_compiled_variable;
 
+// 脚本是可以有函数\类的嵌套定义的, 这个结构对应的是?
 struct _zend_op_array {
 	/* Common elements */
 	zend_uchar type;
+	// 如果是自定义函数, 这里保存函数名.
+	// and then?? 嵌套结构怎么表示的?
 	char *function_name;		
 	zend_class_entry *scope;
 	zend_uint fn_flags;
@@ -207,6 +219,7 @@ struct _zend_op_array {
 
 	zend_uint *refcount;
 
+	// opcode码, 数组(?)
 	zend_op *opcodes;
 	zend_uint last, size;
 
@@ -330,6 +343,7 @@ struct _zend_execute_data {
 #define EX(element) execute_data.element
 
 
+// znode::op_type定义
 #define IS_CONST	(1<<0)
 #define IS_TMP_VAR	(1<<1)
 #define IS_VAR		(1<<2)

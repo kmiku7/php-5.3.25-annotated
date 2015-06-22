@@ -1248,14 +1248,19 @@ ZEND_API int zend_execute_scripts(int type TSRMLS_DC, zval **retval, int file_co
 		if (!file_handle) {
 			continue;
 		}
+		// compile file
+		// array stored opcode list
 		EG(active_op_array) = zend_compile_file(file_handle, type TSRMLS_CC);
 		if (file_handle->opened_path) {
 			int dummy = 1;
 			zend_hash_add(&EG(included_files), file_handle->opened_path, strlen(file_handle->opened_path) + 1, (void *)&dummy, sizeof(int), NULL);
 		}
 		zend_destroy_file_handle(file_handle TSRMLS_CC);
+		// 当前活跃的文件,执行该文件(?)
 		if (EG(active_op_array)) {
 			EG(return_value_ptr_ptr) = retval ? retval : NULL;
+			// 执行
+			// defined in zend_execute_api.c
 			zend_execute(EG(active_op_array) TSRMLS_CC);
 			zend_exception_restore(TSRMLS_C);
 			if (EG(exception)) {

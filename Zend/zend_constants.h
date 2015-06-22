@@ -30,6 +30,7 @@
 
 #define	PHP_USER_CONSTANT INT_MAX	/* a constant defined in user space */
 
+// 保存常量的数据结构
 typedef struct _zend_constant {
 	zval value;
 	int flags;

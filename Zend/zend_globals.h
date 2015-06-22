@@ -92,6 +92,7 @@ struct _zend_compiler_globals {
 	char *heredoc;
 	int heredoc_len;
 
+	// 保存的编译后的opcode
 	zend_op_array *active_op_array;
 
 	HashTable *function_table;	/* function symbol table */
@@ -182,6 +183,7 @@ struct _zend_executor_globals {
 	HashTable *active_symbol_table;
 	HashTable symbol_table;		/* main symbol table */
 
+	// 每个compile的文件都会加入(?)
 	HashTable included_files;	/* files already included */
 
 	JMP_BUF *bailout;
@@ -190,6 +192,7 @@ struct _zend_executor_globals {
 	int orig_error_reporting;
 	int exit_status;
 
+	// array stored opcode list
 	zend_op_array *active_op_array;
 
 	HashTable *function_table;	/* function symbol table */

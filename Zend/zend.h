@@ -302,22 +302,39 @@ typedef struct _zend_object {
 
 #include "zend_object_handlers.h"
 
+// 八种类型:
+// 	标量: boolean, integer, float, string
+//	复合类型:	array, object
+//	特殊类型:	resource, NULL
+
+// “保存函数的变量”??
+// PHP总是申请len+1个空间,最后一个字节总是保存0(?)
 typedef union _zvalue_value {
+	// boolean, integer, resource(?)
 	long lval;					/* long value */
+	// float
 	double dval;				/* double value */
+	// string
 	struct {
 		char *val;
 		int len;
 	} str;
+	// array
 	HashTable *ht;				/* hash table value */
+	// object
+	// zend_types.h
 	zend_object_value obj;
 } zvalue_value;
 
+// IS_NULL是不再value里保存具体的值的，因为他只有一种取值可能。
 struct _zval_struct {
 	/* Variable information */
 	zvalue_value value;		/* value */
+	// 引用计数
 	zend_uint refcount__gc;
+	// 取值为IS_NULL, IS_ARRAY ...
 	zend_uchar type;	/* active type */
+	// 是否为引用, $a = &$b
 	zend_uchar is_ref__gc;
 };
 

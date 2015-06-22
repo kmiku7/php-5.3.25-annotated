@@ -223,6 +223,7 @@ process_double:
 	}
 }
 
+// 模式查找
 static inline char *
 zend_memnstr(char *haystack, char *needle, int needle_len, char *end)
 {

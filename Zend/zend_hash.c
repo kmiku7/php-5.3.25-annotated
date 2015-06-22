@@ -136,7 +136,7 @@ ZEND_API ulong zend_hash_func(const char *arKey, uint nKeyLength)
 	}
 
 
-
+// hash_func_t参数不再使用,保留仅是接口兼容.
 ZEND_API int _zend_hash_init(HashTable *ht, uint nSize, hash_func_t pHashFunction, dtor_func_t pDestructor, zend_bool persistent ZEND_FILE_LINE_DC)
 {
 	uint i = 3;
@@ -148,6 +148,8 @@ ZEND_API int _zend_hash_init(HashTable *ht, uint nSize, hash_func_t pHashFunctio
 		/* prevent overflow */
 		ht->nTableSize = 0x80000000;
 	} else {
+		// round操作
+		// i有最小值的
 		while ((1U << i) < nSize) {
 			i++;
 		}
@@ -155,6 +157,7 @@ ZEND_API int _zend_hash_init(HashTable *ht, uint nSize, hash_func_t pHashFunctio
 	}
 
 	ht->nTableMask = ht->nTableSize - 1;
+	// 通用的元素释放函数
 	ht->pDestructor = pDestructor;
 	ht->arBuckets = NULL;
 	ht->pListHead = NULL;
@@ -199,7 +202,6 @@ ZEND_API void zend_hash_set_apply_protection(HashTable *ht, zend_bool bApplyProt
 }
 
 
-
 ZEND_API int _zend_hash_add_or_update(HashTable *ht, const char *arKey, uint nKeyLength, void *pData, uint nDataSize, void **pDest, int flag ZEND_FILE_LINE_DC)
 {
 	ulong h;
@@ -219,6 +221,7 @@ ZEND_API int _zend_hash_add_or_update(HashTable *ht, const char *arKey, uint nKe
 	nIndex = h & ht->nTableMask;
 
 	p = ht->arBuckets[nIndex];
+	// 查找key是否存在, 处理UPDATE逻辑
 	while (p != NULL) {
 		if ((p->h == h) && (p->nKeyLength == nKeyLength)) {
 			if (!memcmp(p->arKey, arKey, nKeyLength)) {
@@ -233,6 +236,7 @@ ZEND_API int _zend_hash_add_or_update(HashTable *ht, const char *arKey, uint nKe
 					return FAILURE;
 				}
 #endif
+				// 这里做了析构操作
 				if (ht->pDestructor) {
 					ht->pDestructor(p->pData);
 				}
@@ -247,12 +251,15 @@ ZEND_API int _zend_hash_add_or_update(HashTable *ht, const char *arKey, uint nKe
 		p = p->pNext;
 	}
 	
+	// 处理ADD逻辑
 	p = (Bucket *) pemalloc(sizeof(Bucket) - 1 + nKeyLength, ht->persistent);
 	if (!p) {
 		return FAILURE;
 	}
 	memcpy(p->arKey, arKey, nKeyLength);
 	p->nKeyLength = nKeyLength;
+	// p是此处分配的, INIT_DATA()内部处理失败的时候会free(p)
+	// 保存的不是zval对象，而是一个zval指针
 	INIT_DATA(ht, p, pData, nDataSize);
 	p->h = h;
 	CONNECT_TO_BUCKET_DLLIST(p, ht->arBuckets[nIndex]);
@@ -266,6 +273,7 @@ ZEND_API int _zend_hash_add_or_update(HashTable *ht, const char *arKey, uint nKe
 	HANDLE_UNBLOCK_INTERRUPTIONS();
 
 	ht->nNumOfElements++;
+	// 一次性resize完
 	ZEND_HASH_IF_FULL_DO_RESIZE(ht);		/* If the Hash table is full, resize it */
 	return SUCCESS;
 }
@@ -346,7 +354,7 @@ ZEND_API int zend_hash_add_empty_element(HashTable *ht, const char *arKey, uint 
 	return zend_hash_add(ht, arKey, nKeyLength, &dummy, sizeof(void *), NULL);
 }
 
-
+// flag参数: HASH_UPDATE HASH_NEXT_INSERT
 ZEND_API int _zend_hash_index_update_or_next_insert(HashTable *ht, ulong h, void *pData, uint nDataSize, void **pDest, int flag ZEND_FILE_LINE_DC)
 {
 	uint nIndex;
@@ -362,6 +370,8 @@ ZEND_API int _zend_hash_index_update_or_next_insert(HashTable *ht, ulong h, void
 	p = ht->arBuckets[nIndex];
 	while (p != NULL) {
 		if ((p->nKeyLength == 0) && (p->h == h)) {
+			// 没看到有针对HAHS_ADD的宏
+			// 这个case什么时候会触发?
 			if (flag & HASH_NEXT_INSERT || flag & HASH_ADD) {
 				return FAILURE;
 			}
@@ -406,6 +416,8 @@ ZEND_API int _zend_hash_index_update_or_next_insert(HashTable *ht, ulong h, void
 	CONNECT_TO_GLOBAL_DLLIST(p, ht);
 	HANDLE_UNBLOCK_INTERRUPTIONS();
 
+	// 上线就是LONG_MAX
+	// max(h+1, nNextFreeElement)
 	if ((long)h >= (long)ht->nNextFreeElement) {
 		ht->nNextFreeElement = h < LONG_MAX ? h + 1 : LONG_MAX;
 	}
@@ -455,6 +467,8 @@ ZEND_API int zend_hash_rehash(HashTable *ht)
 	return SUCCESS;
 }
 
+// 一个函数覆盖了string-key & index 的情况
+// 但他是根据flag做了switch
 ZEND_API int zend_hash_del_key_or_index(HashTable *ht, const char *arKey, uint nKeyLength, ulong h, int flag)
 {
 	uint nIndex;
@@ -493,6 +507,9 @@ ZEND_API int zend_hash_del_key_or_index(HashTable *ht, const char *arKey, uint n
 			} else {
 				ht->pListTail = p->pListLast;
 			}
+			// array遍历的一致性维护， 指向下一个元素
+			// 可能会漏元素吧？？？
+			// 没有,怎么做到的?
 			if (ht->pInternalPointer == p) {
 				ht->pInternalPointer = p->pListNext;
 			}
@@ -668,6 +685,7 @@ ZEND_API void zend_hash_apply(HashTable *ht, apply_func_t apply_func TSRMLS_DC)
 
 	IS_CONSISTENT(ht);
 
+	// 递归遍历保存
 	HASH_PROTECT_RECURSION(ht);
 	p = ht->pListHead;
 	while (p != NULL) {
@@ -675,6 +693,7 @@ ZEND_API void zend_hash_apply(HashTable *ht, apply_func_t apply_func TSRMLS_DC)
 		
 		if (result & ZEND_HASH_APPLY_REMOVE) {
 			p = zend_hash_apply_deleter(ht, p);
+			// 执行delete的时候， 并没有iterator++的操作
 		} else {
 			p = p->pListNext;
 		}
@@ -893,6 +912,9 @@ ZEND_API int zend_hash_find(const HashTable *ht, const char *arKey, uint nKeyLen
 }
 
 
+// precondition:
+// 	h要么是string-key的hash-value
+// 	要么就是按照索引查找元素
 ZEND_API int zend_hash_quick_find(const HashTable *ht, const char *arKey, uint nKeyLength, ulong h, void **pData)
 {
 	uint nIndex;
@@ -904,6 +926,7 @@ ZEND_API int zend_hash_quick_find(const HashTable *ht, const char *arKey, uint n
 
 	IS_CONSISTENT(ht);
 
+	// 少了zend_inline_hash_func的hash计算过程
 	nIndex = h & ht->nTableMask;
 
 	p = ht->arBuckets[nIndex];
@@ -927,6 +950,7 @@ ZEND_API int zend_hash_exists(const HashTable *ht, const char *arKey, uint nKeyL
 	Bucket *p;
 
 	IS_CONSISTENT(ht);
+
 
 	h = zend_inline_hash_func(arKey, nKeyLength);
 	nIndex = h & ht->nTableMask;

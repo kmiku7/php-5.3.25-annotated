@@ -53,8 +53,11 @@ typedef unsigned long zend_uintptr_t;
 typedef unsigned int zend_object_handle;
 typedef struct _zend_object_handlers zend_object_handlers;
 
+
 typedef struct _zend_object_value {
+	// unsigned, 对象池索引
 	zend_object_handle handle;
+
 	zend_object_handlers *handlers;
 } zend_object_value;
 

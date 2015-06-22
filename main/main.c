@@ -1443,6 +1443,8 @@ int php_request_startup(TSRMLS_D)
 		zend_activate(TSRMLS_C);
 		sapi_activate(TSRMLS_C);
 
+		// 这两个timeout真起作用?
+		// 什么情况下触发?
 		if (PG(max_input_time) == -1) {
 			zend_set_timeout(EG(timeout_seconds), 1);
 		} else {
@@ -2313,6 +2315,7 @@ PHPAPI int php_execute_script(zend_file_handle *primary_file TSRMLS_DC)
 #endif
 			zend_set_timeout(INI_INT("max_execution_time"), 0);
 		}
+		// 执行三个文件, prepend-file, primary-file, append-file
 		retval = (zend_execute_scripts(ZEND_REQUIRE TSRMLS_CC, NULL, 3, prepend_file_p, primary_file, append_file_p) == SUCCESS);
 
 	} zend_end_try();

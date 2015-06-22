@@ -75,7 +75,7 @@ END_EXTERN_C()
  * so make sure that you allocate a separate buffer for them
  * and that you free them after sapi_deactivate().
  */
-
+// 每个sapi Request对应的信息
 typedef struct {
 	const char *request_method;
 	char *query_string;

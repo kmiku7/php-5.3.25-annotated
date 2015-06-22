@@ -633,6 +633,7 @@ static int cli_seek_file_begin(zend_file_handle *file_handle, char *script_file,
 
 /* {{{ main
  */
+// bin php, cli 入口
 #ifdef PHP_CLI_WIN32_NO_CONSOLE
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd)
 #else
@@ -716,6 +717,7 @@ int main(int argc, char *argv[])
 	cli_sapi_module.ini_entries = malloc(sizeof(HARDCODED_INI));
 	memcpy(cli_sapi_module.ini_entries, HARDCODED_INI, sizeof(HARDCODED_INI));
 
+	// 初始化环境变量
 	while ((c = php_getopt(argc, argv, OPTIONS, &php_optarg, &php_optind, 0, 2))!=-1) {
 		switch (c) {
 			case 'c':
@@ -1075,6 +1077,7 @@ int main(int argc, char *argv[])
 
 		/* before registering argv to module exchange the *new* argv[0] */
 		/* we can achieve this without allocating more memory */
+		// argc argv for script 写入到request_info结构体内
 		SG(request_info).argc=argc-php_optind+1;
 		arg_excp = argv+php_optind-1;
 		arg_free = argv[php_optind-1];
@@ -1082,6 +1085,7 @@ int main(int argc, char *argv[])
 		argv[php_optind-1] = file_handle.filename;
 		SG(request_info).argv=argv+php_optind-1;
 
+		// 做什么?
 		if (php_request_startup(TSRMLS_C)==FAILURE) {
 			*arg_excp = arg_free;
 			fclose(file_handle.handle.fp);
@@ -1186,6 +1190,7 @@ int main(int argc, char *argv[])
 				break;
 			}
 #endif /* HAVE_LIBREADLINE || HAVE_LIBEDIT */
+			// 启动执行
 			php_execute_script(&file_handle TSRMLS_CC);
 			exit_status = EG(exit_status);
 			break;

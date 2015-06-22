@@ -410,6 +410,7 @@ finish:
 	return zend_get_constant(name, name_len, result TSRMLS_CC);
 }
 
+// 添加到zend_constants
 ZEND_API int zend_register_constant(zend_constant *c TSRMLS_DC)
 {
 	char *lowercase_name = NULL;

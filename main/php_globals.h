@@ -53,6 +53,7 @@ typedef struct _arg_separators {
 	char *input;
 } arg_separators;
 
+// 这些信息是哪里加载？
 struct _php_core_globals {
 	zend_bool magic_quotes_gpc;
 	zend_bool magic_quotes_runtime;

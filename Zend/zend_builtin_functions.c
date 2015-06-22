@@ -621,6 +621,7 @@ ZEND_FUNCTION(error_reporting)
 
 /* {{{ proto bool define(string constant_name, mixed value, boolean case_insensitive=false)
    Define a new constant */
+// 导出函数define
 ZEND_FUNCTION(define)
 {
 	char *name;
@@ -631,6 +632,7 @@ ZEND_FUNCTION(define)
 	int case_sensitive = CONST_CS;
 	zend_constant c;
 
+	// 字符串, 类型任意, 可选bool值
 	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "sz|b", &name, &name_len, &val, &non_cs) == FAILURE) {
 		return;
 	}
@@ -640,6 +642,9 @@ ZEND_FUNCTION(define)
 	}
 
 	/* class constant, check if there is name and make sure class is valid & exists */
+	// 模式查找
+	// 名字里不能有"::"
+	// why?
 	if (zend_memnstr(name, "::", sizeof("::") - 1, name + name_len)) {
 		zend_error(E_WARNING, "Class constants cannot be defined or redefined");
 		RETURN_FALSE;

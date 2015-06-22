@@ -51,28 +51,48 @@ typedef void (*copy_ctor_param_func_t)(void *pElement, void *pParam);
 
 struct _hashtable;
 
+// array之后两种key类型, 整数和字符串
+// 分别对应 h, nKeyLength & arKey
+// nKeyLength==0, 则key类型为int,保存在h变量中
+// 当nKeyLength>0时, h缓存arKey的hash值
 typedef struct bucket {
 	ulong h;						/* Used for numeric indexing */
 	uint nKeyLength;
+	// 保存的非指针,HT另外分配空间保存该数据结构,使用pData指向
+	// 且pDataPtr = NULL
 	void *pData;
+	// 保存的指针,则直接用pDataPtr保存, pData = &pDataPtr
 	void *pDataPtr;
+	// 一个ht里的所有bucket对象使用这两个字段串成链表关系
 	struct bucket *pListNext;
 	struct bucket *pListLast;
+	// 维护的是这一个桶里的链表关系
 	struct bucket *pNext;
 	struct bucket *pLast;
 	char arKey[1]; /* Must be last element */
 } Bucket;
 
 typedef struct _hashtable {
+	// Bucket的大小， 自动round到2^n
 	uint nTableSize;
+	// = nTableSize - 1
 	uint nTableMask;
+	// 保存的元素个数,不是活跃bucket个数,
+	// 当 > nTableSize时, 自动扩容为原来两倍
 	uint nNumOfElements;
+	// $a[] = XXX 是自动选择下个可用索引
+	// 关联 & 索引混用时, 这个值怎么确定?
 	ulong nNextFreeElement;
 	Bucket *pInternalPointer;	/* Used for element traversal */
+	// 指向pListNext链表的头尾
 	Bucket *pListHead;
 	Bucket *pListTail;
+	// sizeof(arBuckets) == nTableSize
+	// 初始都为NULL
 	Bucket **arBuckets;
+	// 通用的元素释放函数
 	dtor_func_t pDestructor;
+	// 内存分配方式, true: 使用os的接口
 	zend_bool persistent;
 	unsigned char nApplyCount;
 	zend_bool bApplyProtection;
@@ -82,6 +102,7 @@ typedef struct _hashtable {
 } HashTable;
 
 
+// 单独这样一个数据结构什么意思?
 typedef struct _zend_hash_key {
 	char *arKey;
 	uint nKeyLength;
@@ -104,6 +125,11 @@ ZEND_API void zend_hash_clean(HashTable *ht);
 #define zend_hash_init_ex(ht, nSize, pHashFunction, pDestructor, persistent, bApplyProtection)		_zend_hash_init_ex((ht), (nSize), (pHashFunction), (pDestructor), (persistent), (bApplyProtection) ZEND_FILE_LINE_CC)
 
 /* additions/updates/changes */
+// flag标识进行ADD/UPDATE操作
+// pDest什么用途？
+// pDest返回ht里保存的数据接口的指针
+// 完成的是基于关联key更新ht的操作
+// 代码实现里完全不考虑nNextFreeElement的修改
 ZEND_API int _zend_hash_add_or_update(HashTable *ht, const char *arKey, uint nKeyLength, void *pData, uint nDataSize, void **pDest, int flag ZEND_FILE_LINE_DC);
 #define zend_hash_update(ht, arKey, nKeyLength, pData, nDataSize, pDest) \
 		_zend_hash_add_or_update(ht, arKey, nKeyLength, pData, nDataSize, pDest, HASH_UPDATE ZEND_FILE_LINE_CC)
@@ -116,6 +142,9 @@ ZEND_API int _zend_hash_quick_add_or_update(HashTable *ht, const char *arKey, ui
 #define zend_hash_quick_add(ht, arKey, nKeyLength, h, pData, nDataSize, pDest) \
 		_zend_hash_quick_add_or_update(ht, arKey, nKeyLength, h, pData, nDataSize, pDest, HASH_ADD ZEND_FILE_LINE_CC)
 
+// 基于索引的修改操作
+// HASH_UPDATE & HASH_NEXT_INSERT
+// HASH_ADD ???
 ZEND_API int _zend_hash_index_update_or_next_insert(HashTable *ht, ulong h, void *pData, uint nDataSize, void **pDest, int flag ZEND_FILE_LINE_DC);
 #define zend_hash_index_update(ht, h, pData, nDataSize, pDest) \
 		_zend_hash_index_update_or_next_insert(ht, h, pData, nDataSize, pDest, HASH_UPDATE ZEND_FILE_LINE_CC)
@@ -135,6 +164,12 @@ typedef int (*apply_func_args_t)(void *pDest TSRMLS_DC, int num_args, va_list ar
 
 ZEND_API void zend_hash_graceful_destroy(HashTable *ht);
 ZEND_API void zend_hash_graceful_reverse_destroy(HashTable *ht);
+
+// 对每个元素执行apply_func_t, 并根据返回值做不同的操作
+// ZEND_HASH_APPLY_KEEP
+// ZEND_HASH_APPLY_STOP
+// ZEND_HASH_APPLY_REMOVE
+// zend_hash.c, line:680~
 ZEND_API void zend_hash_apply(HashTable *ht, apply_func_t apply_func TSRMLS_DC);
 ZEND_API void zend_hash_apply_with_argument(HashTable *ht, apply_func_arg_t apply_func, void * TSRMLS_DC);
 ZEND_API void zend_hash_apply_with_arguments(HashTable *ht TSRMLS_DC, apply_func_args_t apply_func, int, ...);

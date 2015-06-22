@@ -517,6 +517,8 @@ void fetch_string_offset(znode *result, const znode *parent, const znode *offset
 }
 /* }}} */
 
+// 这个arg(op1)又是怎么构造的?
+// 这些函数是在编译的时候使用的,不是执行的时候
 void zend_do_print(znode *result, const znode *arg TSRMLS_DC) /* {{{ */
 {
 	zend_op *opline = get_next_op(CG(active_op_array) TSRMLS_CC);

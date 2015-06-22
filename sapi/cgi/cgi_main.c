@@ -906,7 +906,7 @@ static sapi_module_struct cgi_sapi_module = {
 
 	sapi_cgibin_ub_write,			/* unbuffered write */
 	sapi_cgibin_flush,				/* flush */
-	NULL,							/* get uid */
+	NULL,							/* get uid */	// 权限相关验证
 	sapi_cgibin_getenv,				/* getenv */
 
 	php_error,						/* error handler */
