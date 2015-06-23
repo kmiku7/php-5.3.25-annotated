@@ -4227,6 +4227,7 @@ void zend_do_list_end(znode *result, znode *expr TSRMLS_DC) /* {{{ */
 }
 /* }}} */
 
+// 生成opcode
 void zend_do_fetch_static_variable(znode *varname, const znode *static_assignment, int fetch_type TSRMLS_DC) /* {{{ */
 {
 	zval *tmp;
@@ -4241,6 +4242,7 @@ void zend_do_fetch_static_variable(znode *varname, const znode *static_assignmen
 	} else {
 		INIT_ZVAL(*tmp);
 	}
+	// 首次使用初始化
 	if (!CG(active_op_array)->static_variables) {
 		ALLOC_HASHTABLE(CG(active_op_array)->static_variables);
 		zend_hash_init(CG(active_op_array)->static_variables, 2, NULL, ZVAL_PTR_DTOR, 0);
@@ -4275,6 +4277,7 @@ void zend_do_fetch_static_variable(znode *varname, const znode *static_assignmen
 		zend_do_assign(&dummy, &lval, &result TSRMLS_CC);
 		zend_do_free(&dummy TSRMLS_CC);
 	} else {
+		// 生成的是ZEND_ASSIGN_REF
 		zend_do_assign_ref(NULL, &lval, &result TSRMLS_CC);
 	}
 	CG(active_op_array)->opcodes[CG(active_op_array)->last-1].result.u.EA.type |= EXT_TYPE_UNUSED;

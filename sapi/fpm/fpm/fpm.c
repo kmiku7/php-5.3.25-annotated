@@ -88,6 +88,7 @@ int fpm_init(int argc, char **argv, char *config, char *prefix, char *pid, int t
 
 /*	children: return listening socket
 	parent: never return */
+// 执行了fork
 int fpm_run(int *max_requests) /* {{{ */
 {
 	struct fpm_worker_pool_s *wp;

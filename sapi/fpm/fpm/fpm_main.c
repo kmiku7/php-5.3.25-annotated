@@ -1816,6 +1816,7 @@ consult the installation file that came with this distribution, or visit \n\
 		}
 	}
 
+	// 这个函数初始化了listening socket
 	if (0 > fpm_init(argc, argv, fpm_config ? fpm_config : CGIG(fpm_config), fpm_prefix, fpm_pid, test_conf, php_allow_to_run_as_root, force_daemon)) {
 
 		if (fpm_globals.send_config_pipe[1]) {
@@ -1835,6 +1836,7 @@ consult the installation file that came with this distribution, or visit \n\
 	}
 	fpm_is_running = 1;
 
+	// 这个位置fork了子进程
 	fcgi_fd = fpm_run(&max_requests);
 	parent = 0;
 

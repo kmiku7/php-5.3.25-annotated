@@ -712,6 +712,7 @@ int fcgi_read(fcgi_request *req, char *str, int len)
 	return n;
 }
 
+// 根据这里是不是可以说: 这是个短链接?
 void fcgi_close(fcgi_request *req, int force, int destroy)
 {
 	if (destroy && req->env) {
