@@ -8,6 +8,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+// 自动扩容的,保存定长字节数组的容器
+
 struct fpm_array_s {
 	void *data;
 	size_t sz;

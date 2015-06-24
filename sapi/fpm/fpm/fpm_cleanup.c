@@ -17,10 +17,13 @@ struct cleanup_s {
 
 static struct fpm_array_s cleanups = { .sz = sizeof(struct cleanup_s) };
 
+// 注册析构句柄
+
 int fpm_cleanup_add(int type, void (*cleanup)(int, void *), void *arg) /* {{{ */
 {
 	struct cleanup_s *c;
 
+	// void*不需要显式cast吗?
 	c = fpm_array_push(&cleanups);
 
 	if (!c) {
@@ -35,6 +38,7 @@ int fpm_cleanup_add(int type, void (*cleanup)(int, void *), void *arg) /* {{{ */
 }
 /* }}} */
 
+// 析构操作是有序的
 void fpm_cleanups_run(int type) /* {{{ */
 {
 	struct cleanup_s *c = fpm_array_item_last(&cleanups);

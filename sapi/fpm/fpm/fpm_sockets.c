@@ -284,6 +284,7 @@ static int fpm_socket_af_inet_listening_socket(struct fpm_worker_pool_s *wp) /* 
 	sa_in.sin_family = AF_INET;
 	sa_in.sin_port = htons(port);
 	free(dup_address);
+	// 这里打开 listening socket
 	return fpm_sockets_get_listening_socket(wp, (struct sockaddr *) &sa_in, sizeof(struct sockaddr_in));
 }
 /* }}} */
@@ -337,6 +338,7 @@ int fpm_sockets_init_main() /* {{{ */
 	}
 
 	/* create all required sockets */
+	// 这里打开listening socket
 	for (wp = fpm_worker_all_pools; wp; wp = wp->next) {
 		switch (wp->listen_address_domain) {
 			case FPM_AF_INET :
@@ -355,7 +357,8 @@ int fpm_sockets_init_main() /* {{{ */
 			return -1;
 		}
 
-	if (wp->listen_address_domain == FPM_AF_INET && fpm_socket_get_listening_queue(wp->listening_socket, NULL, &lq_len) >= 0) {
+		// 难道第二个函数是打算取accept()里的排队句柄数？
+		if (wp->listen_address_domain == FPM_AF_INET && fpm_socket_get_listening_queue(wp->listening_socket, NULL, &lq_len) >= 0) {
 			fpm_scoreboard_update(-1, -1, -1, (int)lq_len, -1, -1, FPM_SCOREBOARD_ACTION_SET, wp->scoreboard);
 		}
 	}

@@ -20,6 +20,8 @@
 #include "fpm_php.h"
 #include "zlog.h"
 
+// 这个信号处理函数来写
+// 谁来读呢?
 static int sp[2];
 
 const char *fpm_signal_names[NSIG + 1] = {

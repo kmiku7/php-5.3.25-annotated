@@ -372,6 +372,7 @@ void fpm_event_loop(int err) /* {{{ */
 		int ret;
 
 		/* sanity check */
+		// 父进程时间循环
 		if (fpm_globals.parent_pid != getpid()) {
 			return;
 		}
@@ -446,7 +447,7 @@ void fpm_event_loop(int err) /* {{{ */
 			}
 			q = q->next;
 		}
-	}
+	} // while (1) {
 }
 /* }}} */
 

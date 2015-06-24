@@ -1881,6 +1881,7 @@ int php_module_startup(sapi_module_struct *sf, zend_module_entry *additional_mod
 
 	php_output_startup();
 
+	// 劫持各种操作?
 	zuf.error_function = php_error_cb;
 	zuf.printf_function = php_printf;
 	zuf.write_function = php_body_write_wrapper;
@@ -1895,6 +1896,7 @@ int php_module_startup(sapi_module_struct *sf, zend_module_entry *additional_mod
 	zuf.vspprintf_function = vspprintf;
 	zuf.getenv_function = sapi_getenv;
 	zuf.resolve_path_function = php_resolve_path_for_zend;
+	// zend虚拟机启动?
 	zend_startup(&zuf, NULL TSRMLS_CC);
 
 #ifdef ZTS

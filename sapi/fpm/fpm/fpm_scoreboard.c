@@ -41,6 +41,7 @@ int fpm_scoreboard_init_main() /* {{{ */
 #endif /* HAVE_TIMES */
 
 
+	// 共享内存方式?
 	for (wp = fpm_worker_all_pools; wp; wp = wp->next) {
 		if (wp->config->pm_max_children < 1) {
 			zlog(ZLOG_ERROR, "[pool %s] Unable to create scoreboard SHM because max_client is not set", wp->config->name);
@@ -52,6 +53,8 @@ int fpm_scoreboard_init_main() /* {{{ */
 			return -1;
 		}
 
+		// 这里是按照max-children分配的
+		// 进程与idx的对应关系如何传递的?
 		wp->scoreboard = fpm_shm_alloc(sizeof(struct fpm_scoreboard_s) + (wp->config->pm_max_children - 1) * sizeof(struct fpm_scoreboard_proc_s *));
 		if (!wp->scoreboard) {
 			return -1;
@@ -283,6 +286,7 @@ int fpm_scoreboard_proc_alloc(struct fpm_scoreboard_s *scoreboard, int *child_in
 	}
 
 	/* first try the slot which is supposed to be free */
+	// free记录下一个(可能的)空闲槽位, 看本函数最后的处理.
 	if (scoreboard->free_proc >= 0 && scoreboard->free_proc < scoreboard->nprocs) {
 		if (scoreboard->procs[scoreboard->free_proc] && !scoreboard->procs[scoreboard->free_proc]->used) {
 			i = scoreboard->free_proc;
@@ -299,6 +303,7 @@ int fpm_scoreboard_proc_alloc(struct fpm_scoreboard_s *scoreboard, int *child_in
 	}
 
 	/* no free slot */
+	// 他的槽位是按照max申请的
 	if (i < 0 || i >= scoreboard->nprocs) {
 		zlog(ZLOG_ERROR, "[pool %s] no free scoreboard slot", scoreboard->pool);
 		return -1;

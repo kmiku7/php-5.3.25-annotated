@@ -17,6 +17,7 @@
 #define FPM_SCOREBOARD_ACTION_SET 0
 #define FPM_SCOREBOARD_ACTION_INC 1
 
+// 每个worker进程对应的统计信息结构
 struct fpm_scoreboard_proc_s {
 	union {
 		atomic_t lock;
@@ -46,6 +47,7 @@ struct fpm_scoreboard_proc_s {
 	size_t memory;
 };
 
+// master的结构
 struct fpm_scoreboard_s {
 	union {
 		atomic_t lock;

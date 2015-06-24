@@ -285,10 +285,12 @@ int fpm_unix_init_main() /* {{{ */
 				return -1;
 
 			case 0 : /* children */
+				// 子进程继续初始化
 				close(fpm_globals.send_config_pipe[0]); /* close the read side of the pipe */
 				break;
 
 			default : /* parent */
+				// 父进程等待子进程的返回值
 				close(fpm_globals.send_config_pipe[1]); /* close the write side of the pipe */
 
 				/*
@@ -355,6 +357,7 @@ int fpm_unix_init_main() /* {{{ */
 	}
 
 	fpm_globals.parent_pid = getpid();
+	// 还是配置的设置, worker应该还没有创建
 	for (wp = fpm_worker_all_pools; wp; wp = wp->next) {
 		if (0 > fpm_unix_conf_wp(wp)) {
 			return -1;

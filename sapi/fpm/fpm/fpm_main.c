@@ -858,6 +858,7 @@ static int sapi_cgi_deactivate(TSRMLS_D)
 
 static int php_cgi_startup(sapi_module_struct *sapi_module)
 {
+	// 两个参数分别是 sapi-module, zend_module
 	if (php_module_startup(sapi_module, &cgi_module_entry, 1) == FAILURE) {
 		return FAILURE;
 	}
@@ -905,6 +906,7 @@ ZEND_BEGIN_ARG_INFO(arginfo_dl, 0)
 ZEND_END_ARG_INFO()
 /* }}} */
 
+// 额外的dl函数
 static const zend_function_entry additional_functions[] = {
 	ZEND_FE(dl, arginfo_dl)
 	{NULL, NULL, NULL}
@@ -1545,6 +1547,7 @@ int main(int argc, char *argv[])
 {
 	int exit_status = FPM_EXIT_OK;
 	int cgi = 0, c;
+	// 持有的文件是?
 	zend_file_handle file_handle;
 
 	/* temporary locals */
@@ -1557,12 +1560,18 @@ int main(int argc, char *argv[])
 	void ***tsrm_ls;
 #endif
 
+	// 每个进程最多处理的请求数
 	int max_requests = 500;
+	// 计数
 	int requests = 0;
+	// 这是listen-fd还是conn-fd?
 	int fcgi_fd = 0;
 	fcgi_request request;
+	// 指定的配置文件
 	char *fpm_config = NULL;
+	// 工作路径的前缀
 	char *fpm_prefix = NULL;
+	// 保存pid的文件
 	char *fpm_pid = NULL;
 	int test_conf = 0;
 	int force_daemon = -1;
@@ -1587,6 +1596,7 @@ int main(int argc, char *argv[])
 	tsrm_ls = ts_resource(0);
 #endif
 
+	// 多态注册
 	sapi_startup(&cgi_sapi_module);
 	cgi_sapi_module.php_ini_path_override = NULL;
 
@@ -1597,6 +1607,7 @@ int main(int argc, char *argv[])
 	setmode(_fileno(stderr), O_BINARY);	/* make the stdio mode be binary */
 #endif
 
+	// options解析
 	while ((c = php_getopt(argc, argv, OPTIONS, &php_optarg, &php_optind, 0, 2)) != -1) {
 		switch (c) {
 			case 'c':
@@ -1610,6 +1621,7 @@ int main(int argc, char *argv[])
 				cgi_sapi_module.php_ini_ignore = 1;
 				break;
 
+			// 每个-d只能跟一组配置
 			case 'd': {
 				/* define ini entries on command line */
 				int len = strlen(php_optarg);
@@ -1642,6 +1654,7 @@ int main(int argc, char *argv[])
 				break;
 			}
 
+			// fpm-config配置
 			case 'y':
 				fpm_config = php_optarg;
 				break;
@@ -1662,6 +1675,7 @@ int main(int argc, char *argv[])
 				test_conf++;
 				break;
 
+			// 这个流程是完整的了.
 			case 'm': /* list compiled in modules */
 				cgi_sapi_module.startup(&cgi_sapi_module);
 				php_output_startup();
@@ -1745,6 +1759,7 @@ int main(int argc, char *argv[])
 		goto out;
 	}
 
+	// 不允许有不接受的配置项
 	/* No other args are permitted here as there is not interactive mode */
 	if (argc != php_optind) {
 		cgi_sapi_module.startup(&cgi_sapi_module);
@@ -1819,6 +1834,7 @@ consult the installation file that came with this distribution, or visit \n\
 	// 这个函数初始化了listening socket
 	if (0 > fpm_init(argc, argv, fpm_config ? fpm_config : CGIG(fpm_config), fpm_prefix, fpm_pid, test_conf, php_allow_to_run_as_root, force_daemon)) {
 
+		// 只有daemonize后的子进程才会走到这里
 		if (fpm_globals.send_config_pipe[1]) {
 			int writeval = 0;
 			zlog(ZLOG_DEBUG, "Sending \"0\" (error) to parent via fd=%d", fpm_globals.send_config_pipe[1]);
@@ -1836,7 +1852,16 @@ consult the installation file that came with this distribution, or visit \n\
 	}
 	fpm_is_running = 1;
 
+	// 到了这里就初始化完毕了
+	// 并按照需要完成了daemon化
+	
+	
+	// ondemand: master里listen & accept & fork
+	// dynamic: 如何做到动态fork的?
+	// dynamic & static: 如何做到子进程因max_request重启而fork的?
+	
 	// 这个位置fork了子进程
+	// 父进程(master process)不会从这个函数里返回(?)
 	fcgi_fd = fpm_run(&max_requests);
 	parent = 0;
 
@@ -1903,6 +1928,7 @@ consult the installation file that came with this distribution, or visit \n\
 			primary_script = estrdup(SG(request_info).path_translated);
 
 			/* path_translated exists, we can continue ! */
+			// 打开目标脚本, 保存的file_handle返回
 			if (php_fopen_primary_script(&file_handle TSRMLS_CC) == FAILURE) {
 				zend_try {
 					zlog(ZLOG_ERROR, "Unable to open primary script: %s (%s)", primary_script, strerror(errno));
@@ -1922,6 +1948,7 @@ consult the installation file that came with this distribution, or visit \n\
 				goto fastcgi_request_done;
 			}
 
+			// 统计信息
 			fpm_request_executing();
 
 			php_execute_script(&file_handle TSRMLS_CC);
@@ -1931,6 +1958,7 @@ fastcgi_request_done:
 				efree(primary_script);
 			}
 
+			// 与server之间是短链接
 			if (request_body_fd != -1) {
 				close(request_body_fd);
 			}
@@ -1960,7 +1988,7 @@ fastcgi_request_done:
 				break;
 			}
 			/* end of fastcgi loop */
-		}
+		} // end while (fcgi_accept_request(&request) >= 0)
 		fcgi_shutdown();
 
 		if (cgi_sapi_module.php_ini_path_override) {

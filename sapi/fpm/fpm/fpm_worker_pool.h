@@ -8,6 +8,7 @@
 #include "fpm_conf.h"
 #include "fpm_shm.h"
 
+// list with header node?
 struct fpm_worker_pool_s;
 struct fpm_child_s;
 struct fpm_child_stat_s;
@@ -18,6 +19,8 @@ enum fpm_address_domain {
 	FPM_AF_INET = 2
 };
 
+// 池?
+// 为什么会有next指针?
 struct fpm_worker_pool_s {
 	struct fpm_worker_pool_s *next;
 	struct fpm_worker_pool_config_s *config;
@@ -28,6 +31,7 @@ struct fpm_worker_pool_s {
 	int socket_uid, socket_gid, socket_mode;
 
 	/* runtime */
+	// children又是?
 	struct fpm_child_s *children;
 	int running_children;
 	int idle_spawn_rate;

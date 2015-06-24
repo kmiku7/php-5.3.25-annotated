@@ -53,8 +53,12 @@ int fpm_init(int argc, char **argv, char *config, char *prefix, char *pid, int t
 	fpm_globals.pid = pid;
 	fpm_globals.run_as_root = run_as_root;
 
-	if (0 > fpm_php_init_main()           ||
+	if (
+		// 注册析构函数
+		0 > fpm_php_init_main()           ||
+		// dup /dev/null 到 stdin, stdout
 	    0 > fpm_stdio_init_main()         ||
+		// 配置的加载与检查
 	    0 > fpm_conf_init_main(test_conf, force_daemon) ||
 	    0 > fpm_unix_init_main()          ||
 	    0 > fpm_scoreboard_init_main()    ||
@@ -94,6 +98,7 @@ int fpm_run(int *max_requests) /* {{{ */
 	struct fpm_worker_pool_s *wp;
 
 	/* create initial children in all pools */
+	// 循环处理每个worker pool
 	for (wp = fpm_worker_all_pools; wp; wp = wp->next) {
 		int is_parent;
 
@@ -111,6 +116,7 @@ int fpm_run(int *max_requests) /* {{{ */
 	}
 
 	/* run event loop forever */
+	// ondemand模式master走到这里,然后永远的陷入循环
 	fpm_event_loop(0);
 
 run_child: /* only workers reach this point */

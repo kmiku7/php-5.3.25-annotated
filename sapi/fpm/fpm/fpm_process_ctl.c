@@ -261,6 +261,8 @@ int fpm_pctl_child_exited() /* {{{ */
 }
 /* }}} */
 
+// process control ?
+// 为什么需要另拷贝一份?
 int fpm_pctl_init_main() /* {{{ */
 {
 	int i;
@@ -454,6 +456,7 @@ void fpm_pctl_heartbeat(struct fpm_event_s *ev, short which, void *arg) /* {{{ *
 	}
 
 	/* ensure heartbeat is not lower than FPM_PCTL_MIN_HEARTBEAT */
+	// 没看到有赋值的地方
 	fpm_globals.heartbeat = MAX(fpm_globals.heartbeat, FPM_PCTL_MIN_HEARTBEAT);
 
 	/* first call without setting to initialize the timer */
@@ -521,6 +524,7 @@ void fpm_pctl_on_socket_accept(struct fpm_event_s *ev, short which, void *arg) /
 
 	for (child = wp->children; child; child = child->next) {
 		/* if there is at least on idle child, it will handle the connection, stop here */
+		// 检测是否有一个处于accepting状态
 		if (fpm_request_is_idle(child)) {
 			return;
 		}

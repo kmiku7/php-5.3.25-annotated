@@ -79,6 +79,7 @@ typedef struct _php_ob_buffer {
 	zend_bool erase;
 } php_ob_buffer;
 
+// 这里是函数指针,由谁赋值?
 typedef struct _php_output_globals {
 	int (*php_body_write)(const char *str, uint str_length TSRMLS_DC);		/* string output */
 	int (*php_header_write)(const char *str, uint str_length TSRMLS_DC);	/* unbuffer string output */

@@ -710,6 +710,7 @@ static int fpm_evaluate_full_path(char **path, struct fpm_worker_pool_s *wp, cha
 }
 /* }}} */
 
+// 主要是配置参数的检查
 static int fpm_conf_process_all_pools() /* {{{ */
 {
 	struct fpm_worker_pool_s *wp, *wp2;
@@ -755,6 +756,7 @@ static int fpm_conf_process_all_pools() /* {{{ */
 		}
 
 		/* pm */
+		// pm只有三种策略
 		if (wp->config->pm != PM_STYLE_STATIC && wp->config->pm != PM_STYLE_DYNAMIC && wp->config->pm != PM_STYLE_ONDEMAND) {
 			zlog(ZLOG_ALERT, "[pool %s] the process manager is missing (static, dynamic or ondemand)", wp->config->name);
 			return -1;
@@ -891,6 +893,8 @@ static int fpm_conf_process_all_pools() /* {{{ */
 			}
 		}
 
+		// 单个请求必须这么长时间内处理完成
+		// 怎么实现的?
 		if (wp->config->request_terminate_timeout) {
 			fpm_globals.heartbeat = fpm_globals.heartbeat ? MIN(fpm_globals.heartbeat, (wp->config->request_terminate_timeout * 1000) / 3) : (wp->config->request_terminate_timeout * 1000) / 3;
 		}
@@ -908,6 +912,7 @@ static int fpm_conf_process_all_pools() /* {{{ */
 				return -1;
 			}
 #else
+			// 这是什么意思?????
 			static int warned = 0;
 
 			if (!warned) {
@@ -1115,6 +1120,7 @@ int fpm_conf_write_pid() /* {{{ */
 }
 /* }}} */
 
+// 配置项检查, 以及??
 static int fpm_conf_post_process(int force_daemon TSRMLS_DC) /* {{{ */
 {
 	struct fpm_worker_pool_s *wp;
@@ -1167,6 +1173,7 @@ static int fpm_conf_post_process(int force_daemon TSRMLS_DC) /* {{{ */
 		return -1;
 	}
 
+	// poll, epoll等的初始化
 	if (0 > fpm_event_pre_init(fpm_global_config.events_mechanism)) {
 		return -1;
 	}
@@ -1628,6 +1635,7 @@ int fpm_conf_init_main(int test_conf, int force_daemon) /* {{{ */
 		}
 	}
 
+	// fpm-config 加载
 	ret = fpm_conf_load_ini_file(fpm_globals.config TSRMLS_CC);
 
 	if (0 > ret) {

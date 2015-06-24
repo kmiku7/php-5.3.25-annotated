@@ -23,6 +23,7 @@
 static int fd_stdout[2];
 static int fd_stderr[2];
 
+// dup /dev/null 到 stdin, stdout
 int fpm_stdio_init_main() /* {{{ */
 {
 	int fd = open("/dev/null", O_RDWR);

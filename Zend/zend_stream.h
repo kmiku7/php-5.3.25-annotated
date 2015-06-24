@@ -59,6 +59,7 @@ typedef struct _zend_stream {
 	zend_stream_closer_t   closer;
 } zend_stream;
 
+// 封装了多种类型的文件操作
 typedef struct _zend_file_handle {
 	zend_stream_type  type;
 	char              *filename;

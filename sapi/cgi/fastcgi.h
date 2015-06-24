@@ -106,7 +106,9 @@ typedef struct _fcgi_request {
 
 	fcgi_header   *out_hdr;
 	unsigned char *out_pos;
+	// 8K的输出buffer,会限制什么? 下限?
 	unsigned char  out_buf[1024*8];
+	// trailer header?
 	unsigned char  reserved[sizeof(fcgi_end_request_rec)];
 
 	HashTable     *env;

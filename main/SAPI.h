@@ -240,6 +240,8 @@ struct _sapi_module_struct {
 	time_t (*get_request_time)(TSRMLS_D);
 	void (*terminate_process)(TSRMLS_D);
 
+	// 额外指定的php.ini
+	// 默认这个会指向etc/php.ini (?)
 	char *php_ini_path_override;
 
 	void (*block_interruptions)(void);
@@ -263,6 +265,7 @@ struct _sapi_module_struct {
 	void (*ini_defaults)(HashTable *configuration_hash);
 	int phpinfo_as_text;
 
+	// 这是一组key=value\n\0分隔的字符串
 	char *ini_entries;
 	const zend_function_entry *additional_functions;
 	unsigned int (*input_filter_init)(TSRMLS_D);

@@ -302,6 +302,7 @@ static struct fpm_child_s *fpm_resources_prepare(struct fpm_worker_pool_s *wp) /
 {
 	struct fpm_child_s *c;
 
+	// 只是分配一个fpm_child_s结构体空间
 	c = fpm_child_alloc();
 
 	if (!c) {
@@ -342,11 +343,13 @@ static void fpm_child_resources_use(struct fpm_child_s *child) /* {{{ */
 		if (wp == child->wp) {
 			continue;
 		}
+		// 从父进程fork过来的，释放不需要的shm
 		fpm_scoreboard_free(wp->scoreboard);
 	}
 
 	fpm_scoreboard_child_use(child->wp->scoreboard, child->scoreboard_i, getpid());
 	fpm_stdio_child_use_pipes(child);
+	// 这的意思是说子进程不需要这个结构体（？）
 	fpm_child_free(child);
 }
 /* }}} */
@@ -358,6 +361,7 @@ static void fpm_parent_resources_use(struct fpm_child_s *child) /* {{{ */
 }
 /* }}} */
 
+// nb_to_spawn指创建多少个子进程(?)
 int fpm_children_make(struct fpm_worker_pool_s *wp, int in_event_loop, int nb_to_spawn, int is_debug) /* {{{ */
 {
 	pid_t pid;
@@ -365,10 +369,13 @@ int fpm_children_make(struct fpm_worker_pool_s *wp, int in_event_loop, int nb_to
 	int max;
 	static int warned = 0;
 
+	// 动态过程是如何创建新进程的？ 触发点是？
 	if (wp->config->pm == PM_STYLE_DYNAMIC) {
 		if (!in_event_loop) { /* starting */
+			// 动态, 且是在初始化里, 需要预创建进程
 			max = wp->config->pm_start_servers;
 		} else {
+			// 有nb_to_spawn个新请求没人处理, 新创建nb_to_spawn个进程
 			max = wp->running_children + nb_to_spawn;
 		}
 	} else if (wp->config->pm == PM_STYLE_ONDEMAND) {
@@ -402,6 +409,7 @@ int fpm_children_make(struct fpm_worker_pool_s *wp, int in_event_loop, int nb_to
 		switch (pid) {
 
 			case 0 :
+				// 子进程
 				fpm_child_resources_use(child);
 				fpm_globals.is_child = 1;
 				fpm_child_init(wp);
@@ -414,6 +422,7 @@ int fpm_children_make(struct fpm_worker_pool_s *wp, int in_event_loop, int nb_to
 				return 2;
 
 			default :
+				// 父进程
 				child->pid = pid;
 				fpm_clock_get(&child->started);
 				fpm_parent_resources_use(child);
@@ -435,6 +444,7 @@ int fpm_children_make(struct fpm_worker_pool_s *wp, int in_event_loop, int nb_to
 int fpm_children_create_initial(struct fpm_worker_pool_s *wp) /* {{{ */
 {
 	if (wp->config->pm == PM_STYLE_ONDEMAND) {
+		// ondemand模式是不预创建子进程的
 		wp->ondemand_event = (struct fpm_event_s *)malloc(sizeof(struct fpm_event_s));
 
 		if (!wp->ondemand_event) {
@@ -444,6 +454,7 @@ int fpm_children_create_initial(struct fpm_worker_pool_s *wp) /* {{{ */
 		}
 
 		memset(wp->ondemand_event, 0, sizeof(struct fpm_event_s));
+		// 这里是他的accept事件处理函数
 		fpm_event_set(wp->ondemand_event, wp->listening_socket, FPM_EV_READ | FPM_EV_EDGE, fpm_pctl_on_socket_accept, wp);
 		wp->socket_event_set = 1;
 		fpm_event_add(wp->ondemand_event, 0);
@@ -456,6 +467,7 @@ int fpm_children_create_initial(struct fpm_worker_pool_s *wp) /* {{{ */
 
 int fpm_children_init_main() /* {{{ */
 {
+	// 貌似用作一个环形buffer.
 	if (fpm_global_config.emergency_restart_threshold &&
 		fpm_global_config.emergency_restart_interval) {
 
