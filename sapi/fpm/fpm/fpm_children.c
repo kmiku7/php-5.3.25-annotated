@@ -180,6 +180,10 @@ void fpm_children_bury() /* {{{ */
 	pid_t pid;
 	struct fpm_child_s *child;
 
+	// 等待子进程
+	// WNOHANG 不阻塞
+	// WUNTRACED 
+	// 不会出现SIGCHILD的延迟吗? 信号收到, 过了很久才能wait到
 	while ( (pid = waitpid(-1, &status, WNOHANG | WUNTRACED)) > 0) {
 		char buf[128];
 		int severity = ZLOG_NOTICE;
@@ -233,6 +237,7 @@ void fpm_children_bury() /* {{{ */
 			continue;
 		}
 
+		// 注意else, 这里肯定是能找对对应的数据结构的.
 		if (child) {
 			struct fpm_worker_pool_s *wp = child->wp;
 			struct timeval tv1, tv2;
@@ -254,6 +259,7 @@ void fpm_children_bury() /* {{{ */
 				zlog(ZLOG_DEBUG, "[pool %s] child %d has been killed by the process managment after %ld.%06d seconds from start", child->wp->config->name, (int) pid, tv2.tv_sec, (int) tv2.tv_usec);
 			}
 
+			// 删除对应的events in event-loop
 			fpm_child_close(child, 1 /* in event_loop */);
 
 			fpm_pctl_child_exited();
@@ -455,6 +461,8 @@ int fpm_children_create_initial(struct fpm_worker_pool_s *wp) /* {{{ */
 
 		memset(wp->ondemand_event, 0, sizeof(struct fpm_event_s));
 		// 这里是他的accept事件处理函数
+		// 这是在父进程里调用的
+		// 这的事件回掉函数会尝试fork
 		fpm_event_set(wp->ondemand_event, wp->listening_socket, FPM_EV_READ | FPM_EV_EDGE, fpm_pctl_on_socket_accept, wp);
 		wp->socket_event_set = 1;
 		fpm_event_add(wp->ondemand_event, 0);

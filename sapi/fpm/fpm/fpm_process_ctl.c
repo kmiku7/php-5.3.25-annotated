@@ -159,6 +159,8 @@ void fpm_pctl_kill_all(int signo) /* {{{ */
 				fpm_signal_names[signo] ? fpm_signal_names[signo] : "", (int) child->pid);
 
 			if (res == 0) {
+				// 这个alive指的当前存活,发信号成功的
+				// 而不是预期需要存活的
 				++alive_children;
 			}
 		}

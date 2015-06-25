@@ -72,6 +72,7 @@ static void fpm_got_signal(struct fpm_event_s *ev, short which, void *arg) /* {{
 				zlog(ZLOG_DEBUG, "received SIGCHLD");
 				fpm_children_bury();
 				break;
+			// Terminate &  Finish 行为有什么区别?
 			case 'I' :                  /* SIGINT  */
 				zlog(ZLOG_DEBUG, "received SIGINT");
 				zlog(ZLOG_NOTICE, "Terminating ...");
@@ -87,6 +88,7 @@ static void fpm_got_signal(struct fpm_event_s *ev, short which, void *arg) /* {{
 				zlog(ZLOG_NOTICE, "Finishing ...");
 				fpm_pctl(FPM_PCTL_STATE_FINISHING, FPM_PCTL_ACTION_SET);
 				break;
+			// reopen log file
 			case '1' :                  /* SIGUSR1 */
 				zlog(ZLOG_DEBUG, "received SIGUSR1");
 				if (0 == fpm_stdio_open_error_log(1)) {
@@ -104,6 +106,7 @@ static void fpm_got_signal(struct fpm_event_s *ev, short which, void *arg) /* {{
 				/* else no access log are set */
 
 				break;
+			// reloading
 			case '2' :                  /* SIGUSR2 */
 				zlog(ZLOG_DEBUG, "received SIGUSR2");
 				zlog(ZLOG_NOTICE, "Reloading in progress ...");
@@ -348,6 +351,7 @@ void fpm_event_loop(int err) /* {{{ */
 		return;
 	}
 
+	// 信号处理回掉
 	fpm_event_set(&signal_fd_event, fpm_signals_get_fd(), FPM_EV_READ, &fpm_got_signal, NULL);
 	fpm_event_add(&signal_fd_event, 0);
 

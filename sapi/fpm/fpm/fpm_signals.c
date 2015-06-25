@@ -174,6 +174,7 @@ static void sig_handler(int signo) /* {{{ */
 
 	saved_errno = errno;
 	s = sig_chars[signo];
+	// 父进程收到信号会写入到sp[1], event-loop监听sp[0]的读事件.
 	write(sp[1], &s, sizeof(s));
 	errno = saved_errno;
 }
