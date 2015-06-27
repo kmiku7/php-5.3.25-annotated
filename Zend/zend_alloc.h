@@ -19,6 +19,8 @@
 
 /* $Id$ */
 
+// Zend内存管理函数
+
 #ifndef ZEND_ALLOC_H
 #define ZEND_ALLOC_H
 
@@ -52,7 +54,16 @@ typedef struct _zend_leak_info {
 
 BEGIN_EXTERN_C()
 
+
+// 具体实现
+// malloc, 分配的是len+1个字节.
 ZEND_API char *zend_strndup(const char *s, unsigned int length) ZEND_ATTRIBUTE_MALLOC;
+
+
+// 这里的命名规律是 _XXX_YYY() _XXX_eYYY() (???)
+// 不带e的函数是持久化分配, 使用系统malloc函数族分配.
+// 带e的分配是与请求关联在一起的, 分配的内存块会用zend-mm内部的数据结构串在一起,
+// zend的内存泄漏检测也是基于次实现的.
 
 ZEND_API void *_emalloc(size_t size ZEND_FILE_LINE_DC ZEND_FILE_LINE_ORIG_DC) ZEND_ATTRIBUTE_MALLOC;
 ZEND_API void *_safe_emalloc(size_t nmemb, size_t size, size_t offset ZEND_FILE_LINE_DC ZEND_FILE_LINE_ORIG_DC) ZEND_ATTRIBUTE_MALLOC;
@@ -66,6 +77,8 @@ ZEND_API char *_estrdup(const char *s ZEND_FILE_LINE_DC ZEND_FILE_LINE_ORIG_DC) 
 ZEND_API char *_estrndup(const char *s, unsigned int length ZEND_FILE_LINE_DC ZEND_FILE_LINE_ORIG_DC) ZEND_ATTRIBUTE_MALLOC;
 ZEND_API size_t _zend_mem_block_size(void *ptr TSRMLS_DC ZEND_FILE_LINE_DC ZEND_FILE_LINE_ORIG_DC);
 
+
+// 宏封装
 /* Standard wrapper macros */
 #define emalloc(size)						_emalloc((size) ZEND_FILE_LINE_CC ZEND_FILE_LINE_EMPTY_CC)
 #define safe_emalloc(nmemb, size, offset)	_safe_emalloc((nmemb), (size), (offset) ZEND_FILE_LINE_CC ZEND_FILE_LINE_EMPTY_CC)
@@ -139,10 +152,13 @@ inline static void * __zend_realloc(void *p, size_t len)
 #define safe_estrdup(ptr)  ((ptr)?(estrdup(ptr)):STR_EMPTY_ALLOC())
 #define safe_estrndup(ptr, len) ((ptr)?(estrndup((ptr), (len))):STR_EMPTY_ALLOC())
 
+
+// 这几个是内存管理配置接口
 ZEND_API int zend_set_memory_limit(size_t memory_limit);
 
 ZEND_API void start_memory_manager(TSRMLS_D);
 ZEND_API void shutdown_memory_manager(int silent, int full_shutdown TSRMLS_DC);
+// 判断use_zend_alloc的
 ZEND_API int is_zend_mm(TSRMLS_D);
 
 #if ZEND_DEBUG
@@ -163,6 +179,7 @@ END_EXTERN_C()
 
 /* Macroses for zend_fast_cache.h compatibility */
 
+// 第三个参数有用?
 #define ZEND_FAST_ALLOC(p, type, fc_type)	\
 	(p) = (type *) emalloc(sizeof(type))
 
@@ -221,6 +238,7 @@ ZEND_API size_t _zend_mm_block_size(zend_mm_heap *heap, void *p ZEND_FILE_LINE_D
 #define zend_mm_realloc_rel(heap, p, size)	_zend_mm_realloc((heap), (p), (size) ZEND_FILE_LINE_RELAY_CC ZEND_FILE_LINE_CC)
 #define zend_mm_block_size_rel(heap, p)		_zend_mm_block_size((heap), (p) ZEND_FILE_LINE_CC ZEND_FILE_LINE_EMPTY_CC)
 
+// 这个多态的意思是?
 /* Heaps with user defined storage */
 typedef struct _zend_mm_storage zend_mm_storage;
 

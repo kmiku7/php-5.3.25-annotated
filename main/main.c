@@ -117,6 +117,7 @@
 PHPAPI int (*php_register_internal_extensions_func)(TSRMLS_D) = php_register_internal_extensions;
 
 #ifndef ZTS
+// php.ini内的信息
 php_core_globals core_globals;
 #else
 PHPAPI int core_globals_id;

@@ -36,7 +36,9 @@ ZEND_API zend_op_array *(*zend_compile_file)(zend_file_handle *file_handle, int 
 ZEND_API zend_op_array *(*zend_compile_string)(zval *source_string, char *filename TSRMLS_DC);
 
 #ifndef ZTS
+// 编译时信息, 包括函数表等
 ZEND_API zend_compiler_globals compiler_globals;
+// 执行时信息, 
 ZEND_API zend_executor_globals executor_globals;
 #endif
 

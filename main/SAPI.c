@@ -52,6 +52,7 @@
 #ifdef ZTS
 SAPI_API int sapi_globals_id;
 #else
+// sapi的信息
 sapi_globals_struct sapi_globals;
 #endif
 

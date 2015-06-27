@@ -324,11 +324,16 @@ struct _zend_execute_data {
 	zend_function_state function_state;
 	zend_function *fbc; /* Function Being Called */
 	zend_class_entry *called_scope;
+	// 函数局部的opcode序列
 	zend_op_array *op_array;
 	zval *object;
 	union _temp_variable *Ts;
+	// 这个是?
+	// Constant ValueS ?
 	zval ***CVs;
+	// 局部变量的符号表
 	HashTable *symbol_table;
+	// 外层, 调用者函数栈
 	struct _zend_execute_data *prev_execute_data;
 	zval *old_error_reporting;
 	zend_bool nested;

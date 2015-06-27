@@ -150,6 +150,7 @@ static void zend_mm_mem_dummy_compact(zend_mm_storage *storage)
 
 #if defined(HAVE_MEM_MMAP_ANON) || defined(HAVE_MEM_MMAP_ZERO)
 
+// zend_mm_mem_mmap_realloc 函数肯定跟 storage 对应一组的.
 static zend_mm_segment* zend_mm_mem_mmap_realloc(zend_mm_storage *storage, zend_mm_segment* segment, size_t size)
 {
 	zend_mm_segment *ret;
@@ -337,6 +338,7 @@ typedef struct _zend_mm_block_info {
 #if ZEND_MM_COOKIES
 	size_t _cookie;
 #endif
+	// 块大小
 	size_t _size;
 	size_t _prev;
 } zend_mm_block_info;
@@ -363,6 +365,7 @@ typedef struct _zend_mm_debug_info {
 
 #endif
 
+// 额外的信息
 typedef struct _zend_mm_block {
 	zend_mm_block_info info;
 #if ZEND_DEBUG
@@ -376,6 +379,7 @@ typedef struct _zend_mm_block {
 #endif
 } zend_mm_block;
 
+// 双向链表, 空闲块.
 typedef struct _zend_mm_small_free_block {
 	zend_mm_block_info info;
 #if ZEND_DEBUG
@@ -388,7 +392,11 @@ typedef struct _zend_mm_small_free_block {
 	struct _zend_mm_free_block *next_free_block;
 } zend_mm_small_free_block;
 
+// 双向链表, 空闲块.
+// 与zend_mm_small_free_block区别在哪?
+// parent & child 字段是做什么用的?
 typedef struct _zend_mm_free_block {
+	// 这个结构体里有size信息
 	zend_mm_block_info info;
 #if ZEND_DEBUG
 	unsigned int magic;
@@ -413,19 +421,30 @@ typedef struct _zend_mm_free_block {
 #endif
 
 struct _zend_mm_heap {
+	// 使用zend管理内存,还是字节使用os接口.
 	int                 use_zend_alloc;
+	// ??
 	void               *(*_malloc)(size_t);
 	void                (*_free)(void*);
 	void               *(*_realloc)(void*, size_t);
+	// 小块/大块 空闲内存标识
+	// 分别对应与free_buckets, large_free_buckets
+	// 一共 sizeof(size_t) * 8 个桶.
 	size_t              free_bitmap;
 	size_t              large_free_bitmap;
+	// 一次分配的内存段(块)大小
+	// 默认ZEND_MM_SEG_SIZE
 	size_t              block_size;
 	size_t              compact_size;
 	zend_mm_segment    *segments_list;
+	// 使用的存储层, win32/malloc等方式的重载
 	zend_mm_storage    *storage;
+	// 实际使用量,实际峰值
+	// 包括zend-mm的额外消耗(?)
 	size_t              real_size;
 	size_t              real_peak;
 	size_t              limit;
+	// 内存使用量,峰值. 程序代码实际可用的.
 	size_t              size;
 	size_t              peak;
 	size_t              reserve_size;
@@ -436,6 +455,7 @@ struct _zend_mm_heap {
 	unsigned int        cached;
 	zend_mm_free_block *cache[ZEND_MM_NUM_BUCKETS];
 #endif
+	// 数组, 两个指针为一组, 对应一个双向链表的头指针.
 	zend_mm_free_block *free_buckets[ZEND_MM_NUM_BUCKETS*2];
 	zend_mm_free_block *large_free_buckets[ZEND_MM_NUM_BUCKETS];
 	zend_mm_free_block *rest_buckets[2];
@@ -449,11 +469,14 @@ struct _zend_mm_heap {
 #endif
 };
 
+// 仔细看这个宏是做了什么!
+// 他要把free_bucket[k] & [k+1] 对齐到 zend_mm_small_free_block 结构体的 prev_free_block & next_free_block 上.
+// free-bucket的操作会用 prev & next的指针值, 且只会用这两个的指针值
 #define ZEND_MM_SMALL_FREE_BUCKET(heap, index) \
 	(zend_mm_free_block*) ((char*)&heap->free_buckets[index * 2] + \
 		sizeof(zend_mm_free_block*) * 2 - \
 		sizeof(zend_mm_small_free_block))
-
+// 这个则只把rest_bucket[k] 对齐到 prev_free_block 上.
 #define ZEND_MM_REST_BUCKET(heap) \
 	(zend_mm_free_block*)((char*)&heap->rest_buckets[0] + \
 		sizeof(zend_mm_free_block*) * 2 - \
@@ -477,6 +500,7 @@ static unsigned int _zend_mm_cookie = 0;
 #endif
 
 /* Default memory segment size */
+// 256kb
 #define ZEND_MM_SEG_SIZE   (256 * 1024)
 
 /* Reserved space for error reporting in case of memory overflow */
@@ -524,15 +548,18 @@ static unsigned int _zend_mm_cookie = 0;
 #define ZEND_MM_ALIGNED_HEADER_SIZE			ZEND_MM_ALIGNED_SIZE(sizeof(zend_mm_block))
 #define ZEND_MM_ALIGNED_FREE_HEADER_SIZE	ZEND_MM_ALIGNED_SIZE(sizeof(zend_mm_small_free_block))
 #define ZEND_MM_MIN_ALLOC_BLOCK_SIZE		ZEND_MM_ALIGNED_SIZE(ZEND_MM_ALIGNED_HEADER_SIZE + END_MAGIC_SIZE)
-#define ZEND_MM_ALIGNED_MIN_HEADER_SIZE		(ZEND_MM_MIN_ALLOC_BLOCK_SIZE>ZEND_MM_ALIGNED_FREE_HEADER_SIZE?ZEND_MM_MIN_ALLOC_BLOCK_SIZE:ZEND_MM_ALIGNED_FREE_HEADER_SIZE)
+#define ZEND_MM_ALIGNED_MIN_HEADER_SIZE		(ZEND_MM_MIN_ALLOC_BLOCK_SIZE > ZEND_MM_ALIGNED_FREE_HEADER_SIZE ? ZEND_MM_MIN_ALLOC_BLOCK_SIZE : ZEND_MM_ALIGNED_FREE_HEADER_SIZE)
 #define ZEND_MM_ALIGNED_SEGMENT_SIZE		ZEND_MM_ALIGNED_SIZE(sizeof(zend_mm_segment))
 
 #define ZEND_MM_MIN_SIZE					((ZEND_MM_ALIGNED_MIN_HEADER_SIZE>(ZEND_MM_ALIGNED_HEADER_SIZE+END_MAGIC_SIZE))?(ZEND_MM_ALIGNED_MIN_HEADER_SIZE-(ZEND_MM_ALIGNED_HEADER_SIZE+END_MAGIC_SIZE)):0)
 
+// sizeof(size_t) == 4:	32 * 8 + sizeof(zend_mm_block)
+// sizeof(size_t) == 8:	64 * 8 + sizeof(zend_mm_block)
 #define ZEND_MM_MAX_SMALL_SIZE				((ZEND_MM_NUM_BUCKETS<<ZEND_MM_ALIGNMENT_LOG2)+ZEND_MM_ALIGNED_MIN_HEADER_SIZE)
 
 #define ZEND_MM_TRUE_SIZE(size)				((size<ZEND_MM_MIN_SIZE)?(ZEND_MM_ALIGNED_MIN_HEADER_SIZE):(ZEND_MM_ALIGNED_SIZE(size+ZEND_MM_ALIGNED_HEADER_SIZE+END_MAGIC_SIZE)))
 
+// 额...
 #define ZEND_MM_BUCKET_INDEX(true_size)		((true_size>>ZEND_MM_ALIGNMENT_LOG2)-(ZEND_MM_ALIGNED_MIN_HEADER_SIZE>>ZEND_MM_ALIGNMENT_LOG2))
 
 #define ZEND_MM_SMALL_SIZE(true_size)		(true_size < ZEND_MM_MAX_SMALL_SIZE)
@@ -657,6 +684,7 @@ static void *_zend_mm_alloc_int(zend_mm_heap *heap, size_t size ZEND_FILE_LINE_D
 static void _zend_mm_free_int(zend_mm_heap *heap, void *p ZEND_FILE_LINE_DC ZEND_FILE_LINE_ORIG_DC);
 static void *_zend_mm_realloc_int(zend_mm_heap *heap, void *p, size_t size ZEND_FILE_LINE_DC ZEND_FILE_LINE_ORIG_DC);
 
+// 找到最高位1的下标, 下标从0开始算.
 static inline unsigned int zend_mm_high_bit(size_t _size)
 {
 #if defined(__GNUC__) && defined(i386)
@@ -739,27 +767,39 @@ static inline void zend_mm_add_to_free_list(zend_mm_heap *heap, zend_mm_free_blo
 
 	ZEND_MM_SET_MAGIC(mm_block, MEM_BLOCK_FREED);
 
+	// size是包括zend-mm-header的大小的
 	size = ZEND_MM_FREE_BLOCK_SIZE(mm_block);
+	// 判断属于small-list还是large-list
+	// 属于large-list的可能更大
 	if (EXPECTED(!ZEND_MM_SMALL_SIZE(size))) {
+		// large free list
+
 		zend_mm_free_block **p;
 
+		// size ~ > 0x100
+		// idx = 最高为1的idx
+		// 也就是会空闲8个桶
 		index = ZEND_MM_LARGE_BUCKET_INDEX(size);
 		p = &heap->large_free_buckets[index];
 		mm_block->child[0] = mm_block->child[1] = NULL;
 		if (!*p) {
+			// 空链表
 			*p = mm_block;
 			mm_block->parent = p;
 			mm_block->prev_free_block = mm_block->next_free_block = mm_block;
 			heap->large_free_bitmap |= (ZEND_MM_LONG_CONST(1) << index);
 		} else {
+			// 非空链表
 			size_t m;
 
 			for (m = size << (ZEND_MM_NUM_BUCKETS - index); ; m <<= 1) {
 				zend_mm_free_block *prev = *p;
 
+				// trie?
 				if (ZEND_MM_FREE_BLOCK_SIZE(prev) != size) {
 					p = &prev->child[(m >> (ZEND_MM_NUM_BUCKETS-1)) & 1];
 					if (!*p) {
+						// 为空
 						*p = mm_block;
 						mm_block->parent = p;
 						mm_block->prev_free_block = mm_block->next_free_block = mm_block;
@@ -777,16 +817,22 @@ static inline void zend_mm_add_to_free_list(zend_mm_heap *heap, zend_mm_free_blo
 			}
 		}
 	} else {
+		// small free list
+
 		zend_mm_free_block *prev, *next;
 
+		// idx = (size - sizeof(header)) / 8
+		// size ~ 0x100
 		index = ZEND_MM_BUCKET_INDEX(size);
 
 		prev = ZEND_MM_SMALL_FREE_BUCKET(heap, index);
 		if (prev->prev_free_block == prev) {
+			// 空 -> 非空
 			heap->free_bitmap |= (ZEND_MM_LONG_CONST(1) << index);
 		}
 		next = prev->next_free_block;
 
+		// 这里的双向量表操作简洁很多!
 		mm_block->prev_free_block = prev;
 		mm_block->next_free_block = next;
 		prev->next_free_block = next->prev_free_block = mm_block;
@@ -801,6 +847,8 @@ static inline void zend_mm_remove_from_free_list(zend_mm_heap *heap, zend_mm_fre
 	ZEND_MM_CHECK_MAGIC(mm_block, MEM_BLOCK_FREED);
 
 	if (EXPECTED(prev == mm_block)) {
+		// 同大小的只有这一个了
+
 		zend_mm_free_block **rp, **cp;
 
 #if ZEND_MM_SAFE_UNLINKING
@@ -809,6 +857,7 @@ static inline void zend_mm_remove_from_free_list(zend_mm_heap *heap, zend_mm_fre
 		}
 #endif
 
+		// 擦..
 		rp = &mm_block->child[mm_block->child[1] != NULL];
 		prev = *rp;
 		if (EXPECTED(prev == NULL)) {
@@ -851,6 +900,7 @@ subst_block:
 		next->prev_free_block = prev;
 
 		if (EXPECTED(ZEND_MM_SMALL_SIZE(ZEND_MM_FREE_BLOCK_SIZE(mm_block)))) {
+			// 怎么可能!
 			if (EXPECTED(prev == next)) {
 				size_t index = ZEND_MM_BUCKET_INDEX(ZEND_MM_FREE_BLOCK_SIZE(mm_block));
 
@@ -859,6 +909,7 @@ subst_block:
 				}
 			}
 		} else if (UNEXPECTED(mm_block->parent != NULL)) {
+			// fxxk
 			goto subst_block;
 		}
 	}
@@ -1013,6 +1064,7 @@ static void zend_mm_random(unsigned char *buf, size_t size) /* {{{ */
  * - This function may alter the block_sizes values to match platform alignment
  * - This function does *not* perform sanity checks on the arguments
  */
+// heap = zend_mm_startup_ex(handlers, seg_size, ZEND_MM_RESERVE_SIZE, 0, NULL);
 ZEND_API zend_mm_heap *zend_mm_startup_ex(const zend_mm_mem_handlers *handlers, size_t block_size, size_t reserve_size, int internal, void *params)
 {
 	zend_mm_storage *storage;
@@ -1081,15 +1133,19 @@ ZEND_API zend_mm_heap *zend_mm_startup_ex(const zend_mm_mem_handlers *handlers, 
 	heap->block_size = block_size;
 	heap->compact_size = 0;
 	heap->segments_list = NULL;
+	// 初始化free-buckets & large-free-buckets
 	zend_mm_init(heap);
 # if ZEND_MM_CACHE_STAT
 	memset(heap->cache_stat, 0, sizeof(heap->cache_stat));
 # endif
 
+	// 环境变量USE_ZEND_ALLOC何时生效
 	heap->use_zend_alloc = 1;
 	heap->real_size = 0;
 	heap->overflow = 0;
 	heap->real_peak = 0;
+	// 可用内存大小
+	// 配置项合适生效
 	heap->limit = ZEND_MM_LONG_CONST(1)<<(ZEND_MM_NUM_BUCKETS-2);
 	heap->size = 0;
 	heap->peak = 0;
@@ -1099,6 +1155,7 @@ ZEND_API zend_mm_heap *zend_mm_startup_ex(const zend_mm_mem_handlers *handlers, 
 	if (reserve_size > 0) {
 		heap->reserve = _zend_mm_alloc_int(heap, reserve_size ZEND_FILE_LINE_CC ZEND_FILE_LINE_EMPTY_CC);
 	}
+	// 什么用途?
 	if (internal) {
 		int i;
 		zend_mm_free_block *p, *q, *orig;
@@ -1106,8 +1163,8 @@ ZEND_API zend_mm_heap *zend_mm_startup_ex(const zend_mm_mem_handlers *handlers, 
 
 		*mm_heap = *heap;
 
-		p = ZEND_MM_SMALL_FREE_BUCKET(mm_heap, 0);
-		orig = ZEND_MM_SMALL_FREE_BUCKET(heap, 0);
+		p = 	ZEND_MM_SMALL_FREE_BUCKET(mm_heap, 0);
+		orig = 	ZEND_MM_SMALL_FREE_BUCKET(heap, 0);
 		for (i = 0; i < ZEND_MM_NUM_BUCKETS; i++) {
 			q = p;
 			while (q->prev_free_block != orig) {
@@ -1133,6 +1190,8 @@ ZEND_API zend_mm_heap *zend_mm_startup_ex(const zend_mm_mem_handlers *handlers, 
 	return heap;
 }
 
+// zend-mm初始化函数
+// zend-mm的主要工作就是维护free_buckets, large_free_bunckets, rest_buckets三个列表.
 ZEND_API zend_mm_heap *zend_mm_startup(void)
 {
 	int i;
@@ -1142,6 +1201,7 @@ ZEND_API zend_mm_heap *zend_mm_startup(void)
 	const zend_mm_mem_handlers *handlers;
 	zend_mm_heap *heap;
 
+	// 使用的storage类型, i=0看起来是malloc的值
 	if (mem_type == NULL) {
 		i = 0;
 	} else {
@@ -1150,6 +1210,8 @@ ZEND_API zend_mm_heap *zend_mm_startup(void)
 				break;
 			}
 		}
+		// == null, 到了end_guard
+		// 错误处理
 		if (!mem_handlers[i].name) {
 			fprintf(stderr, "Wrong or unsupported zend_mm storage type '%s'\n", mem_type);
 			fprintf(stderr, "  supported types:\n");
@@ -1193,6 +1255,7 @@ ZEND_API zend_mm_heap *zend_mm_startup(void)
 
 	heap = zend_mm_startup_ex(handlers, seg_size, ZEND_MM_RESERVE_SIZE, 0, NULL);
 	if (heap) {
+		// 看起来没有使用
 		tmp = getenv("ZEND_MM_COMPACT");
 		if (tmp) {
 			heap->compact_size = zend_atoi(tmp, 0);
@@ -1749,6 +1812,8 @@ static zend_mm_free_block *zend_mm_search_large_block(zend_mm_heap *heap, size_t
 		/* Search for best "large" free block */
 		zend_mm_free_block *rst = NULL;
 		size_t m;
+		// 擦..
+		// size_t是无符号数, 赋值为-1 等价于 赋值MAX_VALUE
 		size_t best_size = -1;
 
 		best_fit = NULL;
@@ -1798,6 +1863,7 @@ static zend_mm_free_block *zend_mm_search_large_block(zend_mm_heap *heap, size_t
 	}
 
 	/* Search for smallest "large" free block */
+	// fxxk
 	best_fit = p = heap->large_free_buckets[index + zend_mm_low_bit(bitmap)];
 	while ((p = p->child[p->child[0] != NULL])) {
 		if (ZEND_MM_FREE_BLOCK_SIZE(p) < ZEND_MM_FREE_BLOCK_SIZE(best_fit)) {
@@ -1810,6 +1876,7 @@ static zend_mm_free_block *zend_mm_search_large_block(zend_mm_heap *heap, size_t
 static void *_zend_mm_alloc_int(zend_mm_heap *heap, size_t size ZEND_FILE_LINE_DC ZEND_FILE_LINE_ORIG_DC)
 {
 	zend_mm_free_block *best_fit;
+	// round to next 0x????(1000)b
 	size_t true_size = ZEND_MM_TRUE_SIZE(size);
 	size_t block_size;
 	size_t remaining_size;
@@ -1821,6 +1888,7 @@ static void *_zend_mm_alloc_int(zend_mm_heap *heap, size_t size ZEND_FILE_LINE_D
 		size_t index = ZEND_MM_BUCKET_INDEX(true_size);
 		size_t bitmap;
 
+		// 这不逗吗??
 		if (UNEXPECTED(true_size < size)) {
 			goto out_of_memory;
 		}
@@ -2029,6 +2097,11 @@ static void _zend_mm_free_int(zend_mm_heap *heap, void *p ZEND_FILE_LINE_DC ZEND
 		zend_mm_remove_from_free_list(heap, (zend_mm_free_block *) next_block);
 		size += ZEND_MM_FREE_BLOCK_SIZE(next_block);
 	}
+	// 如果一个seg被分成了A B C三段
+	// 分的时候是Total -> A BC -> A B C
+	// 回收的时候是A B C -> AB C
+	// 此时C通过size找B, e而AB已经合并了, B的header信息是不合法的
+	// 然后?? 会有这种情况?
 	if (ZEND_MM_PREV_BLOCK_IS_FREE(mm_block)) {
 		mm_block = ZEND_MM_PREV_BLOCK(mm_block);
 		zend_mm_remove_from_free_list(heap, (zend_mm_free_block *) mm_block);
@@ -2038,6 +2111,9 @@ static void _zend_mm_free_int(zend_mm_heap *heap, void *p ZEND_FILE_LINE_DC ZEND
 	    ZEND_MM_IS_GUARD_BLOCK(ZEND_MM_BLOCK_AT(mm_block, size))) {
 		zend_mm_del_segment(heap, (zend_mm_segment *) ((char *)mm_block - ZEND_MM_ALIGNED_SEGMENT_SIZE));
 	} else {
+		// 这 个 宏 非 常 关 键 ! ! !
+		// 这 个 宏 非 常 关 键 ! ! !
+		// 这 个 宏 非 常 关 键 ! ! !
 		ZEND_MM_BLOCK(mm_block, ZEND_MM_FREE_BLOCK, size);
 		zend_mm_add_to_free_list(heap, (zend_mm_free_block *) mm_block);
 	}
@@ -2139,9 +2215,11 @@ static void *_zend_mm_realloc_int(zend_mm_heap *heap, void *p, size_t size ZEND_
 	next_block = ZEND_MM_BLOCK_AT(mm_block, orig_size);
 
 	if (ZEND_MM_IS_FREE_BLOCK(next_block)) {
+		// 当前块的下一块是空闲的
 		ZEND_MM_CHECK_COOKIE(next_block);
 		ZEND_MM_CHECK_BLOCK_LINKAGE(next_block);
 		if (orig_size + ZEND_MM_FREE_BLOCK_SIZE(next_block) >= true_size) {
+			// 且合并后空间足够
 			size_t block_size = orig_size + ZEND_MM_FREE_BLOCK_SIZE(next_block);
 			size_t remaining_size = block_size - true_size;
 
@@ -2176,11 +2254,13 @@ static void *_zend_mm_realloc_int(zend_mm_heap *heap, void *p, size_t size ZEND_
 			return p;
 		} else if (ZEND_MM_IS_FIRST_BLOCK(mm_block) &&
 				   ZEND_MM_IS_GUARD_BLOCK(ZEND_MM_BLOCK_AT(next_block, ZEND_MM_FREE_BLOCK_SIZE(next_block)))) {
+			// 这一整个segnment出了当前的块在使用, 其他的都是空想的.
 			HANDLE_BLOCK_INTERRUPTIONS();
 			zend_mm_remove_from_free_list(heap, (zend_mm_free_block *) next_block);
 			goto realloc_segment;
 		}
 	} else if (ZEND_MM_IS_FIRST_BLOCK(mm_block) && ZEND_MM_IS_GUARD_BLOCK(next_block)) {
+		// 情况同上边的else if内的case
 		zend_mm_segment *segment;
 		zend_mm_segment *segment_copy;
 		size_t segment_size;
@@ -2344,6 +2424,8 @@ ZEND_API void *_emalloc(size_t size ZEND_FILE_LINE_DC ZEND_FILE_LINE_ORIG_DC)
 {
 	TSRMLS_FETCH();
 
+	// 不大可能为0
+	// 走进分支里的概率很低
 	if (UNEXPECTED(!AG(mm_heap)->use_zend_alloc)) {
 		return AG(mm_heap)->_malloc(size);
 	}
@@ -2434,6 +2516,8 @@ static inline size_t safe_address(size_t nmemb, size_t size, size_t offset)
 
 #else
 
+// 这里进行了整数溢出检测.
+// 检测方法就是用了有更大的值空间的类型计算结果, 然后比较是否匹配
 static inline size_t safe_address(size_t nmemb, size_t size, size_t offset)
 {
 	size_t res = nmemb * size + offset;
@@ -2448,12 +2532,12 @@ static inline size_t safe_address(size_t nmemb, size_t size, size_t offset)
 }
 #endif
 
-
 ZEND_API void *_safe_emalloc(size_t nmemb, size_t size, size_t offset ZEND_FILE_LINE_DC ZEND_FILE_LINE_ORIG_DC)
 {
 	return emalloc_rel(safe_address(nmemb, size, offset));
 }
 
+// 持久化的分配
 ZEND_API void *_safe_malloc(size_t nmemb, size_t size, size_t offset)
 {
 	return pemalloc(safe_address(nmemb, size, offset), 1);
@@ -2568,6 +2652,7 @@ static void alloc_globals_ctor(zend_alloc_globals *alloc_globals TSRMLS_DC)
 	alloc_globals->mm_heap = zend_mm_startup();
 
 	tmp = getenv("USE_ZEND_ALLOC");
+	// 这里获取USE_ZEND_ALLOC环境变量, 然后设置zend_mm结构体的几个指针为malloc等系统接口.
 	if (tmp) {
 		alloc_globals->mm_heap->use_zend_alloc = zend_atoi(tmp, 0);
 		if (!alloc_globals->mm_heap->use_zend_alloc) {

@@ -180,6 +180,9 @@ struct _zend_executor_globals {
 
 	zend_op **opline_ptr;
 
+	// 这两个的关系
+	// 运行时这里会指向zend_execute_data::symbol_table
+	// 函数栈如何切换?
 	HashTable *active_symbol_table;
 	// 这个是?
 	HashTable symbol_table;		/* main symbol table */
@@ -194,6 +197,7 @@ struct _zend_executor_globals {
 	int exit_status;
 
 	// array stored opcode list
+	// 顶层的opcode序列? 当前活跃的opcode?
 	zend_op_array *active_op_array;
 
 	HashTable *function_table;	/* function symbol table */
@@ -203,6 +207,7 @@ struct _zend_executor_globals {
 	zend_class_entry *scope;
 	zend_class_entry *called_scope; /* Scope of the calling class */
 
+	// "this"指针? 怎么用? 怎么初始化?
 	zval *This;
 
 	long precision;
@@ -250,6 +255,7 @@ struct _zend_executor_globals {
 	zend_op *opline_before_exception;
 	zend_op exception_op[3];
 
+	// 当前的函数栈
 	struct _zend_execute_data *current_execute_data;
 
 	struct _zend_module_entry *current_module;
