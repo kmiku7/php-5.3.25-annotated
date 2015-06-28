@@ -91,26 +91,39 @@ typedef struct _gc_root_buffer {
 typedef struct _zval_gc_info {
 	zval z;
 	union {
+		// 两个都是指针
+		// 垃圾收集机制缓存的根节点
 		gc_root_buffer       *buffered;
+		// zval_gc_info列表的下一个节点
 		struct _zval_gc_info *next;
 	} u;
 } zval_gc_info;
 
+// global gc info
 typedef struct _zend_gc_globals {
+	// 是否开启
 	zend_bool         gc_enabled;
+	// gc 流程是否正在进行
 	zend_bool         gc_active;
 
+	// 预分配的缓冲区数组, 怎么用?
 	gc_root_buffer   *buf;				/* preallocated arrays of buffers   */
+	// 列表的根节点
 	gc_root_buffer    roots;			/* list of possible roots of cycles */
+	// 没有使用过的缓冲区列表
 	gc_root_buffer   *unused;			/* list of unused buffers           */
 	gc_root_buffer   *first_unused;		/* pointer to first unused buffer   */
 	gc_root_buffer   *last_unused;		/* pointer to last unused buffer    */
 
 	zval_gc_info     *zval_to_free;		/* temporaryt list of zvals to free */
+	// 需要释放的列表开头
 	zval_gc_info     *free_list;
+	// 下一个需要释放的变量位置
 	zval_gc_info     *next_to_free;
 
+	// gc运行的次数统计
 	zend_uint gc_runs;
+	// gc中的垃圾个数
 	zend_uint collected;
 
 #if GC_BENCH

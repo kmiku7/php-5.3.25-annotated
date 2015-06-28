@@ -2318,6 +2318,7 @@ PHPAPI int php_execute_script(zend_file_handle *primary_file TSRMLS_DC)
 #endif
 			zend_set_timeout(INI_INT("max_execution_time"), 0);
 		}
+		// 之前的动作都是文件路径相关, 以及一个很冥想的 exec-timeout设置.
 		// 执行三个文件, prepend-file, primary-file, append-file
 		retval = (zend_execute_scripts(ZEND_REQUIRE TSRMLS_CC, NULL, 3, prepend_file_p, primary_file, append_file_p) == SUCCESS);
 

@@ -76,6 +76,7 @@ static ZEND_INI_MH(OnUpdateErrorReporting) /* {{{ */
 }
 /* }}} */
 
+// 需要开启gc
 static ZEND_INI_MH(OnUpdateGCEnabled) /* {{{ */
 {
 	OnUpdateBool(entry, new_value, new_value_length, mh_arg1, mh_arg2, mh_arg3, stage TSRMLS_CC);
@@ -636,6 +637,7 @@ int zend_startup(zend_utility_functions *utility_functions, char **extensions TS
 	zend_getenv = utility_functions->getenv_function;
 	zend_resolve_path = utility_functions->resolve_path_function;
 
+	// 初始化
 	zend_compile_file = compile_file;
 	zend_compile_string = compile_string;
 	zend_execute = execute;
@@ -1253,13 +1255,16 @@ ZEND_API int zend_execute_scripts(int type TSRMLS_DC, zval **retval, int file_co
 		EG(active_op_array) = zend_compile_file(file_handle, type TSRMLS_CC);
 		if (file_handle->opened_path) {
 			int dummy = 1;
+			// included缓存?
 			zend_hash_add(&EG(included_files), file_handle->opened_path, strlen(file_handle->opened_path) + 1, (void *)&dummy, sizeof(int), NULL);
 		}
+		// 关闭句柄
 		zend_destroy_file_handle(file_handle TSRMLS_CC);
 		// 当前活跃的文件,执行该文件(?)
 		if (EG(active_op_array)) {
 			EG(return_value_ptr_ptr) = retval ? retval : NULL;
 			// 执行
+			// 函数指针, 可以挂钩子
 			// defined in zend_execute_api.c
 			zend_execute(EG(active_op_array) TSRMLS_CC);
 			zend_exception_restore(TSRMLS_C);

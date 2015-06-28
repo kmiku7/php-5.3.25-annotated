@@ -271,6 +271,10 @@ static const char long_min_digits[] = "9223372036854775808";
 #include "zend_ts_hash.h"
 #include "zend_llist.h"
 
+// PHP_FUNCTION 函数头
+// ht 参数个数
+// return_value里的ref-count, is-ref两个字段谨慎修改
+// return_value_used表示函数返回值有没有被用到
 #define INTERNAL_FUNCTION_PARAMETERS int ht, zval *return_value, zval **return_value_ptr, zval *this_ptr, int return_value_used TSRMLS_DC
 #define INTERNAL_FUNCTION_PARAM_PASSTHRU ht, return_value, return_value_ptr, this_ptr, return_value_used TSRMLS_CC
 
@@ -771,6 +775,7 @@ END_EXTERN_C()
 
 #define ZEND_MAX_RESERVED_RESOURCES	4
 
+// 这里会覆盖zend_alloc.h里的一些宏
 #include "zend_gc.h"
 #include "zend_operators.h"
 #include "zend_variables.h"

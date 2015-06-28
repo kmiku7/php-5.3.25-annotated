@@ -259,6 +259,7 @@ static int ZEND_FASTCALL zend_leave_helper_SPEC(ZEND_OPCODE_HANDLER_ARGS)
 	ZEND_VM_RETURN();
 }
 
+// 函数调用
 static int ZEND_FASTCALL zend_do_fcall_common_helper_SPEC(ZEND_OPCODE_HANDLER_ARGS)
 {
 	zend_op *opline = EX(opline);

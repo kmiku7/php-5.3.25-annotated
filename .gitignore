@@ -256,3 +256,4 @@ win32/php.dsw
 .project
 .settings
 *.udb
+.DS_Store

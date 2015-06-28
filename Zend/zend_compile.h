@@ -320,9 +320,12 @@ typedef struct _list_llist_element {
 union _temp_variable;
 
 struct _zend_execute_data {
+	// 当前执行的中间码
+	// 从op_array中提出的?
 	struct _zend_op *opline;
 	zend_function_state function_state;
 	zend_function *fbc; /* Function Being Called */
+	// 当前调用对象的作用域
 	zend_class_entry *called_scope;
 	// 函数局部的opcode序列
 	zend_op_array *op_array;

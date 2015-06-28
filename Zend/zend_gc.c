@@ -22,6 +22,7 @@
 #include "zend.h"
 #include "zend_API.h"
 
+// 这么多元素收集一次?
 #define GC_ROOT_BUFFER_MAX_ENTRIES 10000
 
 #ifdef ZTS

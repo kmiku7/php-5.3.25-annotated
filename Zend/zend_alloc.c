@@ -413,7 +413,11 @@ typedef struct _zend_mm_free_block {
 
 #define ZEND_MM_NUM_BUCKETS (sizeof(size_t) << 3)
 
+// 缓存设置
+// cache配置是需要重新编译的
 #define ZEND_MM_CACHE 1
+// sizeof(size_t) == 4: 32 * 4 * 1024 = 128K
+// sizeof(size_t) == 8: 64 * 4 * 1024 = 256K
 #define ZEND_MM_CACHE_SIZE (ZEND_MM_NUM_BUCKETS * 4 * 1024)
 
 #ifndef ZEND_MM_CACHE_STAT
@@ -452,6 +456,9 @@ struct _zend_mm_heap {
 	int                 overflow;
 	int                 internal;
 #if ZEND_MM_CACHE
+	// 使用bucket管理缓存
+	// 已缓存的总大小
+	// 减少小块内存块的访问次数
 	unsigned int        cached;
 	zend_mm_free_block *cache[ZEND_MM_NUM_BUCKETS];
 #endif
@@ -459,6 +466,7 @@ struct _zend_mm_heap {
 	zend_mm_free_block *free_buckets[ZEND_MM_NUM_BUCKETS*2];
 	zend_mm_free_block *large_free_buckets[ZEND_MM_NUM_BUCKETS];
 	zend_mm_free_block *rest_buckets[2];
+	// 缓存使用情况统计
 #if ZEND_MM_CACHE_STAT
 	struct {
 		int count;
@@ -927,6 +935,7 @@ static inline void zend_mm_init(zend_mm_heap *heap)
 	memset(heap->cache, 0, sizeof(heap->cache));
 #endif
 #if ZEND_MM_CACHE_STAT
+	// caceh_stat有多个字段, 为何只初始化一个?
 	for (i = 0; i < ZEND_MM_NUM_BUCKETS; i++) {
 		heap->cache_stat[i].count = 0;
 	}
@@ -954,6 +963,7 @@ static void zend_mm_del_segment(zend_mm_heap *heap, zend_mm_segment *segment)
 }
 
 #if ZEND_MM_CACHE
+// 移除所有的缓存块.
 static void zend_mm_free_cache(zend_mm_heap *heap)
 {
 	int i;
@@ -969,6 +979,7 @@ static void zend_mm_free_cache(zend_mm_heap *heap)
 
 				heap->cached -= size;
 
+				// 缓存bucket只有一个指针, 所以只有prev指针串联block
 				if (ZEND_MM_PREV_BLOCK_IS_FREE(mm_block)) {
 					mm_block = (zend_mm_free_block*)ZEND_MM_PREV_BLOCK(mm_block);
 					size += ZEND_MM_FREE_BLOCK_SIZE(mm_block);
@@ -980,6 +991,7 @@ static void zend_mm_free_cache(zend_mm_heap *heap)
 				}
 				ZEND_MM_BLOCK(mm_block, ZEND_MM_FREE_BLOCK, size);
 
+				// 操作目标就是把当前块放入free-list, 或是完整的segment就释放掉.
 				if (ZEND_MM_IS_FIRST_BLOCK(mm_block) &&
 				    ZEND_MM_IS_GUARD_BLOCK(ZEND_MM_NEXT_BLOCK(mm_block))) {
 					zend_mm_del_segment(heap, (zend_mm_segment *) ((char *)mm_block - ZEND_MM_ALIGNED_SEGMENT_SIZE));
@@ -1136,6 +1148,8 @@ ZEND_API zend_mm_heap *zend_mm_startup_ex(const zend_mm_mem_handlers *handlers, 
 	// 初始化free-buckets & large-free-buckets
 	zend_mm_init(heap);
 # if ZEND_MM_CACHE_STAT
+	// 之前的zend_mm_init只初始化了count字段
+	// 这里全部初始化, 有点重复了.
 	memset(heap->cache_stat, 0, sizeof(heap->cache_stat));
 # endif
 

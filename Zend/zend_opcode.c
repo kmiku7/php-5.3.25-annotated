@@ -362,6 +362,7 @@ static void zend_extension_op_array_handler(zend_extension *extension, zend_op_a
 	}
 }
 
+// 设置opcode句柄
 ZEND_API int pass_two(zend_op_array *op_array TSRMLS_DC)
 {
 	zend_op *opline, *end;
