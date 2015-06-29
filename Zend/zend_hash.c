@@ -137,6 +137,7 @@ ZEND_API ulong zend_hash_func(const char *arKey, uint nKeyLength)
 
 
 // hash_func_t参数不再使用,保留仅是接口兼容.
+// typedef void (*dtor_func_t)(void *pDest);
 ZEND_API int _zend_hash_init(HashTable *ht, uint nSize, hash_func_t pHashFunction, dtor_func_t pDestructor, zend_bool persistent ZEND_FILE_LINE_DC)
 {
 	uint i = 3;
@@ -278,6 +279,8 @@ ZEND_API int _zend_hash_add_or_update(HashTable *ht, const char *arKey, uint nKe
 	return SUCCESS;
 }
 
+// 只要调用了这族函数, 就假设h一定是合法的
+// 还需要arKey的原因是哈希冲突
 ZEND_API int _zend_hash_quick_add_or_update(HashTable *ht, const char *arKey, uint nKeyLength, ulong h, void *pData, uint nDataSize, void **pDest, int flag ZEND_FILE_LINE_DC)
 {
 	uint nIndex;
@@ -449,6 +452,7 @@ static int zend_hash_do_resize(HashTable *ht)
 	return SUCCESS;
 }
 
+// 我勒个去...
 ZEND_API int zend_hash_rehash(HashTable *ht)
 {
 	Bucket *p;
@@ -550,6 +554,7 @@ ZEND_API void zend_hash_destroy(HashTable *ht)
 		}
 		pefree(q, ht->persistent);
 	}
+	// 仅仅是销毁, 其他字段值没有reset.
 	pefree(ht->arBuckets, ht->persistent);
 
 	SET_INCONSISTENT(HT_DESTROYED);
@@ -788,6 +793,7 @@ ZEND_API void zend_hash_reverse_apply(HashTable *ht, apply_func_t apply_func TSR
 }
 
 
+// target = merge(target, source)
 ZEND_API void zend_hash_copy(HashTable *target, HashTable *source, copy_ctor_func_t pCopyConstructor, void *tmp, uint size)
 {
 	Bucket *p;
@@ -877,6 +883,8 @@ ZEND_API void zend_hash_merge_ex(HashTable *target, HashTable *source, copy_ctor
 }
 
 
+// 使用hash-table内部逻辑计算hash值
+// 然后配合quick函数族进行操作.
 ZEND_API ulong zend_get_hash_value(const char *arKey, uint nKeyLength)
 {
 	return zend_inline_hash_func(arKey, nKeyLength);
@@ -1390,6 +1398,8 @@ ZEND_API int zend_hash_sort(HashTable *ht, sort_func_t sort_func,
 
 	IS_CONSISTENT(ht);
 
+	// 干你妹!
+	// ht->nNumOfElements <= 1 && (!renumber || ht->nNumOfElements <= 0)
 	if (!(ht->nNumOfElements>1) && !(renumber && ht->nNumOfElements>0)) { /* Doesn't require sorting */
 		return SUCCESS;
 	}
@@ -1443,7 +1453,8 @@ ZEND_API int zend_hash_sort(HashTable *ht, sort_func_t sort_func,
 	return SUCCESS;
 }
 
-
+// hash表比较
+// ordered指明pListHead列表是不是有序的.
 ZEND_API int zend_hash_compare(HashTable *ht1, HashTable *ht2, compare_func_t compar, zend_bool ordered TSRMLS_DC)
 {
 	Bucket *p1, *p2 = NULL;

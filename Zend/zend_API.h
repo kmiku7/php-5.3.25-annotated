@@ -368,6 +368,7 @@ ZEND_API int add_assoc_string_ex(zval *arg, const char *key, uint key_len, char 
 ZEND_API int add_assoc_stringl_ex(zval *arg, const char *key, uint key_len, char *str, uint length, int duplicate);
 ZEND_API int add_assoc_zval_ex(zval *arg, const char *key, uint key_len, zval *value);
 
+// 数组/hashtable操作相关的宏
 #define add_assoc_long(__arg, __key, __n) add_assoc_long_ex(__arg, __key, strlen(__key)+1, __n)
 #define add_assoc_null(__arg, __key) add_assoc_null_ex(__arg, __key, strlen(__key) + 1)
 #define add_assoc_bool(__arg, __key, __b) add_assoc_bool_ex(__arg, __key, strlen(__key)+1, __b)
@@ -383,6 +384,7 @@ ZEND_API int add_assoc_zval_ex(zval *arg, const char *key, uint key_len, zval *v
 #define add_next_index_unset(__arg) add_next_index_null(__arg)
 #define add_property_unset(__arg, __key) add_property_null(__arg, __key)
 
+// 添加索引元素
 ZEND_API int add_index_long(zval *arg, ulong idx, long n);
 ZEND_API int add_index_null(zval *arg, ulong idx);
 ZEND_API int add_index_bool(zval *arg, ulong idx, int b);
@@ -587,6 +589,9 @@ END_EXTERN_C()
 
 // 返回值的名字总是叫return_value, 因此这个名字也是不能用的
 // 两组宏的区别在于会不会return
+// zval* return_value
+// 指向的一个分配好的zval对象
+// 分配好的.
 #define RETVAL_RESOURCE(l)				ZVAL_RESOURCE(return_value, l)
 #define RETVAL_BOOL(b)					ZVAL_BOOL(return_value, b)
 #define RETVAL_NULL() 					ZVAL_NULL(return_value)
