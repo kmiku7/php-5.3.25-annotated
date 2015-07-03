@@ -126,6 +126,7 @@ typedef struct _zend_try_catch_element {
 /* class flags (types) */
 /* ZEND_ACC_IMPLICIT_ABSTRACT_CLASS is used for abstract classes (since it is set by any abstract method even interfaces MAY have it set, too). */
 /* ZEND_ACC_EXPLICIT_ABSTRACT_CLASS denotes that a class was explicitly defined as abstract by using the keyword. */
+// 常规类为0， 程序中直接赋值
 #define ZEND_ACC_IMPLICIT_ABSTRACT_CLASS	0x10
 #define ZEND_ACC_EXPLICIT_ABSTRACT_CLASS	0x20
 #define ZEND_ACC_FINAL_CLASS	            0x40
@@ -711,6 +712,7 @@ int zendlex(znode *zendlval TSRMLS_DC);
 #define	ZEND_EVAL_CODE						4
 #define ZEND_OVERLOADED_FUNCTION_TEMPORARY	5
 
+// 类类型
 #define ZEND_INTERNAL_CLASS         1
 #define ZEND_USER_CLASS             2
 

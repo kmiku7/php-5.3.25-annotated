@@ -437,22 +437,42 @@ typedef struct _zend_serialize_data zend_serialize_data;
 typedef struct _zend_unserialize_data zend_unserialize_data;
 
 struct _zend_class_entry {
+	// 类类型
+	// ZEND_INTERNAL_CLASS/ZEND_USER_CLASS
+	// 即PHP实现的类, 还是C实现的类.
 	char type;
+	// 类名
 	char *name;
+	// 不包括结尾0(??)
 	zend_uint name_length;
+	// 继承的父类
 	struct _zend_class_entry *parent;
+	// 引用数, 跟zval里的如何配合使用?
 	int refcount;
 	zend_bool constants_updated;
+	// ZEND_ACC_IMPLICIT_ABSTRACT_CLASS: 类存在abstract方法
+	// ZEND_ACC_EXPLICIT_ABSTRACT_CLASS: 在类名称前加了abstract关键字
+	// ZEND_ACC_FINAL_CLASS
+	// ZEND_ACC_INTERFACE
 	zend_uint ce_flags;
 
+	//  方法
 	HashTable function_table;
+	// 默认属性。（new object时从这里拷贝？）
+	// object 有另外的结构体对应？
 	HashTable default_properties;
+	// 属性信息
 	HashTable properties_info;
+	// 什么意思?
 	HashTable default_static_members;
 	HashTable *static_members;
 	HashTable constants_table;
+	// ??
 	const struct _zend_function_entry *builtin_functions;
 
+	// 这里应该都是magic method
+	// 这里的union是什么意思?
+	// 这里是c, 所以需要 struct AA; union BB 这种
 	union _zend_function *constructor;
 	union _zend_function *destructor;
 	union _zend_function *clone;
@@ -466,9 +486,11 @@ struct _zend_class_entry {
 	union _zend_function *serialize_func;
 	union _zend_function *unserialize_func;
 
+	// 怎么用？
 	zend_class_iterator_funcs iterator_funcs;
 
 	/* handlers */
+	// 难道也分 空间分配， 数据初始化两步？
 	zend_object_value (*create_object)(zend_class_entry *class_type TSRMLS_DC);
 	zend_object_iterator *(*get_iterator)(zend_class_entry *ce, zval *object, int by_ref TSRMLS_DC);
 	int (*interface_gets_implemented)(zend_class_entry *iface, zend_class_entry *class_type TSRMLS_DC); /* a class implements this interface */
@@ -481,12 +503,14 @@ struct _zend_class_entry {
 	zend_class_entry **interfaces;
 	zend_uint num_interfaces;
 
+	// 类对应的文件信息
 	char *filename;
 	zend_uint line_start;
 	zend_uint line_end;
 	char *doc_comment;
 	zend_uint doc_comment_len;
 
+	// 所属模块的入口
 	struct _zend_module_entry *module;
 };
 

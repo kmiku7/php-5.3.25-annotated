@@ -313,6 +313,11 @@ unticked_function_declaration_statement:
 			'(' parameter_list ')' '{' inner_statement_list '}' { zend_do_end_function_declaration(&$1 TSRMLS_CC); }
 ;
 
+// 类声明
+// extends_from 指继承自
+// implements_list 实现的接口
+// zend_do_end_class_declaration()处理类、接口的中间代码
+// 类名不区分大小写
 unticked_class_declaration_statement:
 		class_entry_type T_STRING extends_from
 			{ zend_do_begin_class_declaration(&$1, &$2, &$3 TSRMLS_CC); }
@@ -513,7 +518,10 @@ class_statement_list:
 	|	/* empty */
 ;
 
-
+// 类内的结构
+// 变量
+// 类常量
+// 方法
 class_statement:
 		variable_modifiers { CG(access_type) = Z_LVAL($1.u.constant); } class_variable_declaration ';'
 	|	class_constant_declaration ';'
