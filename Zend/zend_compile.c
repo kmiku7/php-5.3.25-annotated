@@ -1214,6 +1214,7 @@ void zend_do_begin_function_declaration(znode *function_token, znode *function_n
 	}
 
 	function_token->u.op_array = CG(active_op_array);
+	// 函数名都转换为小写.
 	lcname = zend_str_tolower_dup(name, name_len);
 
 	orig_interactive = CG(interactive);
@@ -2953,6 +2954,7 @@ ZEND_API void zend_do_implement_interface(zend_class_entry *ce, zend_class_entry
 }
 /* }}} */
 
+// 为何不在编译的时候检查重复声明?
 ZEND_API int do_bind_function(zend_op *opline, HashTable *function_table, zend_bool compile_time) /* {{{ */
 {
 	zend_function *function;

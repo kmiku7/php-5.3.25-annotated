@@ -429,6 +429,7 @@ static int ZEND_FASTCALL zend_do_fcall_common_helper_SPEC(ZEND_OPCODE_HANDLER_AR
 
 static int ZEND_FASTCALL  ZEND_DO_FCALL_BY_NAME_SPEC_HANDLER(ZEND_OPCODE_HANDLER_ARGS)
 {
+	// 入栈之前就做过了?
 	EX(function_state).function = EX(fbc);
 	return zend_do_fcall_common_helper_SPEC(ZEND_OPCODE_HANDLER_ARGS_PASSTHRU);
 }
@@ -1211,7 +1212,7 @@ static int ZEND_FASTCALL  ZEND_INIT_FCALL_BY_NAME_SPEC_CV_HANDLER(ZEND_OPCODE_HA
 				/* Delay closure destruction until its invocation */
 				EX(fbc)->common.prototype = (zend_function*)function_name;
 			} else {
-
+				// 这里空的??
 			}
 			ZEND_VM_NEXT_OPCODE();
 		}

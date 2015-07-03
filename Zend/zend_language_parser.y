@@ -305,6 +305,9 @@ is_reference:
 ;
 
 
+// 1, 2, 3
+// zend_do_begin_function_declaration( function_token, function_name, is_method, return_reference, znode *fn_flags_znode)
+// is_method应该是指是不是类方法.
 unticked_function_declaration_statement:
 		function is_reference T_STRING { zend_do_begin_function_declaration(&$1, &$3, 0, $2.op_type, NULL TSRMLS_CC); }
 			'(' parameter_list ')' '{' inner_statement_list '}' { zend_do_end_function_declaration(&$1 TSRMLS_CC); }
@@ -651,6 +654,7 @@ expr_without_variable:
 			parameter_list ')' lexical_vars '{' inner_statement_list '}' {  zend_do_end_function_declaration(&$1 TSRMLS_CC); $$ = $4; }
 ;
 
+// 记录当前的行号?
 function:
 	T_FUNCTION { $$.u.opline_num = CG(zend_lineno); }
 ;

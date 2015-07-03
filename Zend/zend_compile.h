@@ -259,6 +259,7 @@ struct _zend_op_array {
 
 typedef struct _zend_internal_function {
 	/* Common elements */
+	// 真的 useless
 	zend_uchar type;
 	char * function_name;
 	zend_class_entry *scope;
@@ -272,34 +273,50 @@ typedef struct _zend_internal_function {
 	/* END of common elements */
 
 	void (*handler)(INTERNAL_FUNCTION_PARAMETERS);
+	// 链接到所属模块
 	struct _zend_module_entry *module;
 } zend_internal_function;
 
 #define ZEND_FN_SCOPE_NAME(function)  ((function) && (function)->common.scope ? (function)->common.scope->name : "")
 
 typedef union _zend_function {
+	// 函数类型
+	// fxxk...
 	zend_uchar type;	/* MUST be the first element of this struct! */
 
 	struct {
 		zend_uchar type;  /* never used */
+		// 函数名
 		char *function_name;
+		// 函数所在的类作用域
 		zend_class_entry *scope;
+		// 作为方法时的访问类型(method), 如"ZEND_ACC_STATIC"??
 		zend_uint fn_flags;
+		// 函数原型, 结构体递归(?)
 		union _zend_function *prototype;
+		// 参数数目(传入的?)
 		zend_uint num_args;
+		// 需要的参数数目
 		zend_uint required_num_args;
+		// 参数信息指针
 		zend_arg_info *arg_info;
 		zend_bool pass_rest_by_reference;
+		// 返回值????????
 		unsigned char return_reference;
 	} common;
 
+	// 函数中的操作, 即opcode list
 	zend_op_array op_array;
+	// 只由扩展或Zend/PHP内核提供的函数,用c/c++编写的
 	zend_internal_function internal_function;
 } zend_function;
 
 
 typedef struct _zend_function_state {
+	// 函数体本身
+	// 这个本身是何时构造出来的? 如何保存?
 	zend_function *function;
+	// 指向函数参数的指针
 	void **arguments;
 } zend_function_state;
 
@@ -323,6 +340,7 @@ struct _zend_execute_data {
 	// 当前执行的中间码
 	// 从op_array中提出的?
 	struct _zend_op *opline;
+	// function
 	zend_function_state function_state;
 	zend_function *fbc; /* Function Being Called */
 	// 当前调用对象的作用域
@@ -686,7 +704,7 @@ int zendlex(znode *zendlval TSRMLS_DC);
 #define BP_VAR_FUNC_ARG		5
 #define BP_VAR_UNSET		6
 
-
+// 函数类型
 #define ZEND_INTERNAL_FUNCTION				1
 #define ZEND_USER_FUNCTION					2
 #define ZEND_OVERLOADED_FUNCTION			3
