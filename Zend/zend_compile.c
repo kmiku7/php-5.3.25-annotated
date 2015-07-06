@@ -1187,6 +1187,7 @@ int zend_do_verify_access_types(const znode *current_access_type, const znode *n
 }
 /* }}} */
 
+// is_method == 1, 表示成员方法
 void zend_do_begin_function_declaration(znode *function_token, znode *function_name, int is_method, int return_reference, znode *fn_flags_znode TSRMLS_DC) /* {{{ */
 {
 	zend_op_array op_array;
@@ -1200,6 +1201,7 @@ void zend_do_begin_function_declaration(znode *function_token, znode *function_n
 
 	if (is_method) {
 		if (CG(active_class_entry)->ce_flags & ZEND_ACC_INTERFACE) {
+			// interface里不加access type修饰符或只能public（？）
 			if ((Z_LVAL(fn_flags_znode->u.constant) & ~(ZEND_ACC_STATIC|ZEND_ACC_PUBLIC))) {
 				zend_error(E_COMPILE_ERROR, "Access type for interface method %s::%s() must be omitted", CG(active_class_entry)->name, function_name->u.constant.value.str.val);
 			}
@@ -1232,6 +1234,7 @@ void zend_do_begin_function_declaration(znode *function_token, znode *function_n
 
 	op_array.line_start = zend_get_compiled_lineno(TSRMLS_C);
 
+	// 类方法的一些规则判断
 	if (is_method) {
 		if (zend_hash_add(&CG(active_class_entry)->function_table, lcname, name_len+1, &op_array, sizeof(zend_op_array), (void **) &CG(active_op_array)) == FAILURE) {
 			zend_error(E_COMPILE_ERROR, "Cannot redeclare %s::%s()", CG(active_class_entry)->name, name);
@@ -1245,11 +1248,14 @@ void zend_do_begin_function_declaration(znode *function_token, znode *function_n
 			fn_flags |= ZEND_ACC_PUBLIC;
 		}
 
+		// interface规则
 		if (CG(active_class_entry)->ce_flags & ZEND_ACC_INTERFACE) {
+			// __call()
 			if ((name_len == sizeof(ZEND_CALL_FUNC_NAME)-1) && (!memcmp(lcname, ZEND_CALL_FUNC_NAME, sizeof(ZEND_CALL_FUNC_NAME)-1))) {
 				if (fn_flags & ((ZEND_ACC_PPP_MASK | ZEND_ACC_STATIC) ^ ZEND_ACC_PUBLIC)) {
 					zend_error(E_WARNING, "The magic method __call() must have public visibility and cannot be static");
 				}
+			// __callstatic()
 			} else if ((name_len == sizeof(ZEND_CALLSTATIC_FUNC_NAME)-1) && (!memcmp(lcname, ZEND_CALLSTATIC_FUNC_NAME, sizeof(ZEND_CALLSTATIC_FUNC_NAME)-1))) {
 				if ((fn_flags & (ZEND_ACC_PPP_MASK ^ ZEND_ACC_PUBLIC)) || (fn_flags & ZEND_ACC_STATIC) == 0) {
 					zend_error(E_WARNING, "The magic method __callStatic() must have public visibility and be static");
@@ -1258,23 +1264,28 @@ void zend_do_begin_function_declaration(znode *function_token, znode *function_n
 				if (fn_flags & ((ZEND_ACC_PPP_MASK | ZEND_ACC_STATIC) ^ ZEND_ACC_PUBLIC)) {
 					zend_error(E_WARNING, "The magic method __get() must have public visibility and cannot be static");
 				}
+			// __set()
 			} else if ((name_len == sizeof(ZEND_SET_FUNC_NAME)-1) && (!memcmp(lcname, ZEND_SET_FUNC_NAME, sizeof(ZEND_SET_FUNC_NAME)-1))) {
 				if (fn_flags & ((ZEND_ACC_PPP_MASK | ZEND_ACC_STATIC) ^ ZEND_ACC_PUBLIC)) {
 					zend_error(E_WARNING, "The magic method __set() must have public visibility and cannot be static");
 				}
+			// __unset()
 			} else if ((name_len == sizeof(ZEND_UNSET_FUNC_NAME)-1) && (!memcmp(lcname, ZEND_UNSET_FUNC_NAME, sizeof(ZEND_UNSET_FUNC_NAME)-1))) {
 				if (fn_flags & ((ZEND_ACC_PPP_MASK | ZEND_ACC_STATIC) ^ ZEND_ACC_PUBLIC)) {
 					zend_error(E_WARNING, "The magic method __unset() must have public visibility and cannot be static");
 				}
+			// __isset()
 			} else if ((name_len == sizeof(ZEND_ISSET_FUNC_NAME)-1) && (!memcmp(lcname, ZEND_ISSET_FUNC_NAME, sizeof(ZEND_ISSET_FUNC_NAME)-1))) {
 				if (fn_flags & ((ZEND_ACC_PPP_MASK | ZEND_ACC_STATIC) ^ ZEND_ACC_PUBLIC)) {
 					zend_error(E_WARNING, "The magic method __isset() must have public visibility and cannot be static");
 				}
+			// __tostring()
 			} else if ((name_len == sizeof(ZEND_TOSTRING_FUNC_NAME)-1) && (!memcmp(lcname, ZEND_TOSTRING_FUNC_NAME, sizeof(ZEND_TOSTRING_FUNC_NAME)-1))) {
 				if (fn_flags & ((ZEND_ACC_PPP_MASK | ZEND_ACC_STATIC) ^ ZEND_ACC_PUBLIC)) {
 					zend_error(E_WARNING, "The magic method __toString() must have public visibility and cannot be static");
 				}
 			}
+		//　普通类规则
 		} else {
 			char *class_lcname;
 			
@@ -1282,24 +1293,30 @@ void zend_do_begin_function_declaration(znode *function_token, znode *function_n
 			zend_str_tolower_copy(class_lcname, CG(active_class_entry)->name, CG(active_class_entry)->name_length);
 			/* Improve after RC: cache the lowercase class name */
 
+			// 旧式的构造函数， 与类名同名的函数。
 			if ((CG(active_class_entry)->name_length == name_len) && (!memcmp(class_lcname, lcname, name_len))) {
 				if (!CG(active_class_entry)->constructor) {
 					CG(active_class_entry)->constructor = (zend_function *) CG(active_op_array);
 				}
+			// __construct()
 			} else if ((name_len == sizeof(ZEND_CONSTRUCTOR_FUNC_NAME)-1) && (!memcmp(lcname, ZEND_CONSTRUCTOR_FUNC_NAME, sizeof(ZEND_CONSTRUCTOR_FUNC_NAME)))) {
 				if (CG(active_class_entry)->constructor) {
 					zend_error(E_STRICT, "Redefining already defined constructor for class %s", CG(active_class_entry)->name);
 				}
 				CG(active_class_entry)->constructor = (zend_function *) CG(active_op_array);
+			// __destruct()
 			} else if ((name_len == sizeof(ZEND_DESTRUCTOR_FUNC_NAME)-1) && (!memcmp(lcname, ZEND_DESTRUCTOR_FUNC_NAME, sizeof(ZEND_DESTRUCTOR_FUNC_NAME)-1))) {
 				CG(active_class_entry)->destructor = (zend_function *) CG(active_op_array);
+			// __clone()
 			} else if ((name_len == sizeof(ZEND_CLONE_FUNC_NAME)-1) && (!memcmp(lcname, ZEND_CLONE_FUNC_NAME, sizeof(ZEND_CLONE_FUNC_NAME)-1))) {
 				CG(active_class_entry)->clone = (zend_function *) CG(active_op_array);
+			// __call()
 			} else if ((name_len == sizeof(ZEND_CALL_FUNC_NAME)-1) && (!memcmp(lcname, ZEND_CALL_FUNC_NAME, sizeof(ZEND_CALL_FUNC_NAME)-1))) {
 				if (fn_flags & ((ZEND_ACC_PPP_MASK | ZEND_ACC_STATIC) ^ ZEND_ACC_PUBLIC)) {
 					zend_error(E_WARNING, "The magic method __call() must have public visibility and cannot be static");
 				}
 				CG(active_class_entry)->__call = (zend_function *) CG(active_op_array);
+			// __callstatic()
 			} else if ((name_len == sizeof(ZEND_CALLSTATIC_FUNC_NAME)-1) && (!memcmp(lcname, ZEND_CALLSTATIC_FUNC_NAME, sizeof(ZEND_CALLSTATIC_FUNC_NAME)-1))) {
 				if ((fn_flags & (ZEND_ACC_PPP_MASK ^ ZEND_ACC_PUBLIC)) || (fn_flags & ZEND_ACC_STATIC) == 0) {
 					zend_error(E_WARNING, "The magic method __callStatic() must have public visibility and be static");
@@ -1331,6 +1348,7 @@ void zend_do_begin_function_declaration(znode *function_token, znode *function_n
 				}				
 				CG(active_class_entry)->__tostring = (zend_function *) CG(active_op_array);
 			} else if (!(fn_flags & ZEND_ACC_STATIC)) {
+				// 不是以上那些magic method， 可以设置为static
 				CG(active_op_array)->fn_flags |= ZEND_ACC_ALLOW_STATIC;
 			}
 			free_alloca(class_lcname, use_heap);

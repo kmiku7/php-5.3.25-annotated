@@ -3123,11 +3123,15 @@ ZEND_API int zend_declare_property_ex(zend_class_entry *ce, const char *name, in
 				break;
 		}
 	}
+	// 命名方式分两层
+	// 本地的属性： 直接命名
+	// 继承来的属性： mangle
 	switch (access_type & ZEND_ACC_PPP_MASK) {
 		case ZEND_ACC_PRIVATE: {
 				char *priv_name;
 				int priv_name_length;
 
+				// class_name, \0, orig_name, \0
 				zend_mangle_property_name(&priv_name, &priv_name_length, ce->name, ce->name_length, name, name_length, ce->type & ZEND_INTERNAL_CLASS);
 				zend_hash_update(target_symbol_table, priv_name, priv_name_length+1, &property, sizeof(zval *), NULL);
 				property_info.name = priv_name;
@@ -3149,6 +3153,7 @@ ZEND_API int zend_declare_property_ex(zend_class_entry *ce, const char *name, in
 				char *prot_name;
 				int prot_name_length;
 
+				// mangle出来的名字是 \0, *, \0, orig_name, \0
 				zend_mangle_property_name(&prot_name, &prot_name_length, "*", 1, name, name_length, ce->type & ZEND_INTERNAL_CLASS);
 				zend_hash_del(target_symbol_table, prot_name, prot_name_length+1);
 				pefree(prot_name, ce->type & ZEND_INTERNAL_CLASS);

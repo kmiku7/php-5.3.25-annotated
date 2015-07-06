@@ -992,6 +992,7 @@ ZEND_API zend_function *zend_std_get_static_method(zend_class_entry *ce, char *f
 		/* Only change the method to the constructor if the constructor isn't called __construct
 		 * we check for __ so we can be binary safe for lowering, we should use ZEND_CONSTRUCTOR_FUNC_NAME
 		 */
+		// 以同类名的方式定义了构造函数，然后以A::A()的方式调用。
 		if (!memcmp(lc_class_name, lc_function_name, function_name_strlen) && memcmp(ce->constructor->common.function_name, "__", sizeof("__") - 1)) {
 			fbc = ce->constructor;
 		}
@@ -1051,6 +1052,7 @@ ZEND_API zend_function *zend_std_get_static_method(zend_class_entry *ce, char *f
 }
 /* }}} */
 
+// 获取类静态成员
 ZEND_API zval **zend_std_get_static_property(zend_class_entry *ce, char *property_name, int property_name_len, zend_bool silent TSRMLS_DC) /* {{{ */
 {
 	zval **retval = NULL;
