@@ -180,16 +180,23 @@ typedef struct _zend_property_info {
 	zend_class_entry *ce;
 } zend_property_info;
 
-
+// 标记函数原型的参数信息？？
 typedef struct _zend_arg_info {
+	// 参数的名称
 	const char *name;
 	zend_uint name_len;
+	// 类名（类型名）
 	const char *class_name;
 	zend_uint class_name_len;
+	// 类型提示,是数组类型
 	zend_bool array_type_hint;
+	// 是否允许为NULL
 	zend_bool allow_null;
+	// 是否引用传递
 	zend_bool pass_by_reference;
+	// 是否返回引用
 	zend_bool return_reference;
+	// 必要的参数数量
 	int required_num_args;
 } zend_arg_info;
 

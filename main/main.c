@@ -2059,7 +2059,10 @@ int php_module_startup(sapi_module_struct *sf, zend_module_entry *additional_mod
 	zend_set_utility_values(&zuv);
 	php_startup_sapi_content_types(TSRMLS_C);
 
+	// 貌似这里有连续三个extensions register函数
+	
 	/* startup extensions staticly compiled in */
+	// 间接调用的php_register_extensions()函数, 间接过程增加了modules-list参数: php_builtin_extensions
 	if (php_register_internal_extensions_func(TSRMLS_C) == FAILURE) {
 		php_printf("Unable to start builtin modules\n");
 		return FAILURE;
@@ -2075,6 +2078,7 @@ int php_module_startup(sapi_module_struct *sf, zend_module_entry *additional_mod
 	   which is always an internal extension and to be initialized
 	   ahead of all other internals
 	 */
+	// 利用zend_llist_apply()函数进行遍历map
 	php_ini_register_extensions(TSRMLS_C);
 	zend_startup_modules(TSRMLS_C);
 

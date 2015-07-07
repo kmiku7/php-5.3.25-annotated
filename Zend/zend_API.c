@@ -1726,8 +1726,10 @@ ZEND_API zend_module_entry* zend_register_module_ex(zend_module_entry *module TS
 }
 /* }}} */
 
+// 注册单个模块的接口
 ZEND_API zend_module_entry* zend_register_internal_module(zend_module_entry *module TSRMLS_DC) /* {{{ */
 {
+	// modules结构体也都保存在hash table里, 并按加载顺序编号.
 	module->module_number = zend_next_free_module();
 	module->type = MODULE_PERSISTENT;
 	return zend_register_module_ex(module TSRMLS_CC);

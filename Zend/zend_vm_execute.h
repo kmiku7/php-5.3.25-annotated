@@ -305,6 +305,7 @@ static int ZEND_FASTCALL zend_do_fcall_common_helper_SPEC(ZEND_OPCODE_HANDLER_AR
 	zend_arg_types_stack_3_pop(&EG(arg_types_stack), &EX(called_scope), &EX(current_object), &EX(fbc));
 	EX(function_state).arguments = zend_vm_stack_push_args(opline->extended_value TSRMLS_CC);
 
+	// 内部函数, 即c函数.
 	if (EX(function_state).function->type == ZEND_INTERNAL_FUNCTION) {
 		if (EX(function_state).function->common.arg_info) {
 			zend_uint i=0;
@@ -322,9 +323,16 @@ static int ZEND_FASTCALL zend_do_fcall_common_helper_SPEC(ZEND_OPCODE_HANDLER_AR
 			EX_T(opline->result.u.var).var.ptr_ptr = &EX_T(opline->result.u.var).var.ptr;
 			EX_T(opline->result.u.var).var.fcall_returned_reference = EX(function_state).function->common.return_reference;
 
+			// 执行内部函数的钩子
+			// Zend/zend.c
 			if (!zend_execute_internal) {
 				/* saves one function call if zend_execute_internal is not used */
-				((zend_internal_function *) EX(function_state).function)->handler(opline->extended_value, EX_T(opline->result.u.var).var.ptr, EX(function_state).function->common.return_reference?&EX_T(opline->result.u.var).var.ptr:NULL, EX(object), RETURN_VALUE_USED(opline) TSRMLS_CC);
+				((zend_internal_function *) EX(function_state).function)->handler(
+									opline->extended_value, 
+									EX_T(opline->result.u.var).var.ptr, 
+									EX(function_state).function->common.return_reference ? &EX_T(opline->result.u.var).var.ptr : NULL, 
+									EX(object), 
+									RETURN_VALUE_USED(opline) TSRMLS_CC);
 			} else {
 				zend_execute_internal(execute_data, RETURN_VALUE_USED(opline) TSRMLS_CC);
 			}
@@ -333,6 +341,7 @@ static int ZEND_FASTCALL zend_do_fcall_common_helper_SPEC(ZEND_OPCODE_HANDLER_AR
 				zval_ptr_dtor(&EX_T(opline->result.u.var).var.ptr);
 			}
 		}
+	// 用户函数, 即php函数.
 	} else if (EX(function_state).function->type == ZEND_USER_FUNCTION) {
 		EX(original_return_value) = EG(return_value_ptr_ptr);
 		EG(active_symbol_table) = NULL;
@@ -368,6 +377,7 @@ static int ZEND_FASTCALL zend_do_fcall_common_helper_SPEC(ZEND_OPCODE_HANDLER_AR
 		}
 		EG(active_symbol_table) = EX(symbol_table);
 	} else { /* ZEND_OVERLOADED_FUNCTION */
+	// 这是个what??
 		ALLOC_INIT_ZVAL(EX_T(opline->result.u.var).var.ptr);
 
 			/* Not sure what should be done here if it's a static method */
