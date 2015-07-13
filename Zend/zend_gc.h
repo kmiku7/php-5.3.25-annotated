@@ -78,6 +78,7 @@
 #define GC_OBJ_INIT(z) \
 	(z)->buffered = NULL
 
+// 染色信息在哪？
 typedef struct _gc_root_buffer {
 	struct _gc_root_buffer   *prev;		/* double-linked list               */
 	struct _gc_root_buffer   *next;

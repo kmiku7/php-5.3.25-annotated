@@ -381,6 +381,7 @@ ZEND_API void zend_create_closure(zval *res, zend_function *func TSRMLS_DC) /* {
 {
 	zend_closure *closure;
 
+	// 初始化一个class closure的object
 	object_init_ex(res, zend_ce_closure);
 
 	closure = (zend_closure *)zend_object_store_get_object(res TSRMLS_CC);
@@ -389,11 +390,13 @@ ZEND_API void zend_create_closure(zval *res, zend_function *func TSRMLS_DC) /* {
 	closure->func.common.prototype = NULL;
 
 	if (closure->func.type == ZEND_USER_FUNCTION) {
+		// 原来的static_variables是个啥?
 		if (closure->func.op_array.static_variables) {
 			HashTable *static_variables = closure->func.op_array.static_variables;
 
 			ALLOC_HASHTABLE(closure->func.op_array.static_variables);
 			zend_hash_init(closure->func.op_array.static_variables, zend_hash_num_elements(static_variables), NULL, ZVAL_PTR_DTOR, 0);
+			// 在active_symbol_table里查找
 			zend_hash_apply_with_arguments(static_variables TSRMLS_CC, (apply_func_args_t)zval_copy_static_var, 1, closure->func.op_array.static_variables);
 		}
 		(*closure->func.op_array.refcount)++;

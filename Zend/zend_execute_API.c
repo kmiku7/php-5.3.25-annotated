@@ -455,6 +455,7 @@ ZEND_API void _zval_ptr_dtor(zval **zval_ptr ZEND_FILE_LINE_DC) /* {{{ */
 			Z_UNSET_ISREF_P(zv);
 		}
 
+		// 这里会去重吧.
 		GC_ZVAL_CHECK_POSSIBLE_ROOT(zv);
 	}
 }

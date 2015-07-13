@@ -302,6 +302,7 @@ static int ZEND_FASTCALL zend_do_fcall_common_helper_SPEC(ZEND_OPCODE_HANDLER_AR
 		EG(called_scope) = EX(called_scope);
 	}
 
+	// 推栈帧
 	zend_arg_types_stack_3_pop(&EG(arg_types_stack), &EX(called_scope), &EX(current_object), &EX(fbc));
 	EX(function_state).arguments = zend_vm_stack_push_args(opline->extended_value TSRMLS_CC);
 
@@ -3008,6 +3009,8 @@ static int ZEND_FASTCALL  ZEND_DECLARE_LAMBDA_FUNCTION_SPEC_CONST_CONST_HANDLER(
 	zend_op *opline = EX(opline);
 	zend_function *op_array;
 
+	// op2是缓存的有效hash-code，必须是有效的。
+	// 这里的base lambda什么意思??
 	if (zend_hash_quick_find(EG(function_table), Z_STRVAL(opline->op1.u.constant), Z_STRLEN(opline->op1.u.constant), Z_LVAL(opline->op2.u.constant), (void *) &op_array) == FAILURE ||
 	    op_array->type != ZEND_USER_FUNCTION) {
 		zend_error_noreturn(E_ERROR, "Base lambda function for closure not found");

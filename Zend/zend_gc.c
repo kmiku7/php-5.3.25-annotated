@@ -651,10 +651,13 @@ static void gc_collect_roots(TSRMLS_D)
 
 #define FREE_LIST_END ((zval_gc_info*)(~(zend_uintptr_t)GC_COLOR))
 
+// 主动促发gc
 ZEND_API int gc_collect_cycles(TSRMLS_D)
 {
 	int count = 0;
 
+	// roots列表非空.
+	// 这个列表是带头节点的.
 	if (GC_G(roots).next != &GC_G(roots)) {
 		zval_gc_info *p, *q, *orig_free_list, *orig_next_to_free;
 
