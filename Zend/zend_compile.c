@@ -3859,6 +3859,7 @@ void zend_do_begin_new_object(znode *new_token, znode *class_type TSRMLS_DC) /* 
 
 	new_token->u.opline_num = get_next_op_number(CG(active_op_array));
 	opline = get_next_op(CG(active_op_array) TSRMLS_CC);
+	// 这里指定的NEW_HANDLER
 	opline->opcode = ZEND_NEW;
 	opline->result.op_type = IS_VAR;
 	opline->result.u.var = get_temporary_variable(CG(active_op_array));

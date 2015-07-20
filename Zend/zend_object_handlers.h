@@ -110,6 +110,7 @@ typedef int (*zend_object_count_elements_t)(zval *object, long *count TSRMLS_DC)
 
 typedef int (*zend_object_get_closure_t)(zval *obj, zend_class_entry **ce_ptr, union _zend_function **fptr_ptr, zval **zobj_ptr TSRMLS_DC);
 
+// 这些都是指针，默认实现请到 zend_object_handlers.c 中查看。
 struct _zend_object_handlers {
 	/* general object functions */
 	zend_object_add_ref_t					add_ref;

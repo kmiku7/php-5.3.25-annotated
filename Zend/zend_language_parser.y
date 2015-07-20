@@ -658,6 +658,7 @@ expr_without_variable:
 	|	T_ARRAY '(' array_pair_list ')' { $$ = $3; }
 	|	'`' backticks_expr '`' { zend_do_shell_exec(&$$, &$2 TSRMLS_CC); }
 	|	T_PRINT expr  { zend_do_print(&$$, &$2 TSRMLS_CC); }
+	// 闭包函数声明
 	|	function is_reference '(' { zend_do_begin_lambda_function_declaration(&$$, &$1, $2.op_type TSRMLS_CC); }
 			parameter_list ')' lexical_vars '{' inner_statement_list '}' {  zend_do_end_function_declaration(&$1 TSRMLS_CC); $$ = $4; }
 ;

@@ -486,6 +486,7 @@ static int ZEND_FASTCALL  ZEND_NEW_SPEC_HANDLER(ZEND_OPCODE_HANDLER_ARGS)
 	zval *object_zval;
 	zend_function *constructor;
 
+	// interface & abstract class 是不能实例化的。
 	if (EX_T(opline->op1.u.var).class_entry->ce_flags & (ZEND_ACC_INTERFACE|ZEND_ACC_IMPLICIT_ABSTRACT_CLASS|ZEND_ACC_EXPLICIT_ABSTRACT_CLASS)) {
 		char *class_type;
 
@@ -497,6 +498,7 @@ static int ZEND_FASTCALL  ZEND_NEW_SPEC_HANDLER(ZEND_OPCODE_HANDLER_ARGS)
 		zend_error_noreturn(E_ERROR, "Cannot instantiate %s %s", class_type,  EX_T(opline->op1.u.var).class_entry->name);
 	}
 	ALLOC_ZVAL(object_zval);
+	// 对象初始化
 	object_init_ex(object_zval, EX_T(opline->op1.u.var).class_entry);
 	INIT_PZVAL(object_zval);
 
