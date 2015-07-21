@@ -2043,9 +2043,13 @@ int zend_do_begin_class_member_function_call(znode *class_name, znode *method_na
 	if (class_name->op_type == IS_CONST &&
 			ZEND_FETCH_CLASS_DEFAULT == zend_get_class_fetch_type(Z_STRVAL(class_name->u.constant), Z_STRLEN(class_name->u.constant))) {
 		fetch_type = ZEND_FETCH_CLASS_GLOBAL;
+		// 这个分支指的是字符串就是类名。
+		// 这里直接提取对应的类定义体。
 		zend_resolve_class_name(class_name, &fetch_type, 1 TSRMLS_CC);
 		class_node = *class_name;
 	} else {
+		// 这里的动作是插入一条指令 ZEND_FETCH_CLASS
+		// 返回的class_node指向的是插入的这条opline的result字段。
 		zend_do_fetch_class(&class_node, class_name TSRMLS_CC);
 	}
 	opline = get_next_op(CG(active_op_array) TSRMLS_CC);

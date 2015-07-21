@@ -825,6 +825,7 @@ static inline zend_class_entry * zend_get_function_root_class(zend_function *fbc
 }
 /* }}} */
 
+// 返回魔术方法__call
 static inline union _zend_function *zend_get_user_call_function(zend_class_entry *ce, const char *method_name, int method_len) /* {{{ */
 {
 	zend_internal_function *call_user_call = emalloc(sizeof(zend_internal_function));
@@ -856,6 +857,7 @@ static union _zend_function *zend_std_get_method(zval **object_ptr, char *method
 	zend_str_tolower_copy(lc_method_name, method_name, method_len);
 
 	zobj = Z_OBJ_P(object);
+	// 查询目标方法，如果不存在则返回__call() 或 NULL
 	if (zend_hash_find(&zobj->ce->function_table, lc_method_name, method_len+1, (void **)&fbc) == FAILURE) {
 		free_alloca(lc_method_name, use_heap);
 		if (zobj->ce->__call) {
@@ -1106,6 +1108,7 @@ ZEND_API zend_bool zend_std_unset_static_property(zend_class_entry *ce, char *pr
 ZEND_API union _zend_function *zend_std_get_constructor(zval *object TSRMLS_DC) /* {{{ */
 {
 	zend_object *zobj = Z_OBJ_P(object);
+	// 这个指针指向的是__constructor() 还是 class-name同名的函数？
 	zend_function *constructor = zobj->ce->constructor;
 
 	if (constructor) {

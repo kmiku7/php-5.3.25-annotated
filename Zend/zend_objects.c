@@ -49,6 +49,7 @@ ZEND_API void zend_object_std_dtor(zend_object *object TSRMLS_DC)
 
 ZEND_API void zend_objects_destroy_object(zend_object *object, zend_object_handle handle TSRMLS_DC)
 {
+	// 这个的处理就比较简单了，没有public、private的问题。
 	zend_function *destructor = object ? object->ce->destructor : NULL;
 
 	if (destructor) {
