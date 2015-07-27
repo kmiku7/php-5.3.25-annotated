@@ -19,6 +19,8 @@
 
 /* $Id$ */
 
+// 对象操作相关的api
+
 #ifndef ZEND_OBJECTS_API_H
 #define ZEND_OBJECTS_API_H
 
@@ -30,23 +32,33 @@ typedef void (*zend_objects_store_clone_t)(void *object, void **object_clone TSR
 
 typedef struct _zend_object_store_bucket {
 	zend_bool destructor_called;
+	// 标志该槽位是否被使用了
+	// assert(valid == 0 && (handle>=top || handle in free-list));
 	zend_bool valid;
 	union _store_bucket {
 		struct _store_object {
 			void *object;
+			// 对象析构函数
 			zend_objects_store_dtor_t dtor;
+			// 空间释放函数
 			zend_objects_free_object_storage_t free_storage;
+			// clone函数
 			zend_objects_store_clone_t clone;
+			// struct zend_object_value 也有一个同型字段, 二者有什么区别?
 			const zend_object_handlers *handlers;
+			// 引用计数
+			// zval也有, 这也有. 怎么个关系?
 			zend_uint refcount;
 			gc_root_buffer *buffered;
 		} obj;
+		// free-list 列表
 		struct {
 			int next;
 		} free_list;
 	} bucket;
 } zend_object_store_bucket;
 
+// 一个数组, 槽位可以复用, 空余的槽位使用free_list_head关联.
 typedef struct _zend_objects_store {
 	zend_object_store_bucket *object_buckets;
 	zend_uint top;
@@ -56,21 +68,30 @@ typedef struct _zend_objects_store {
 
 /* Global store handling functions */
 BEGIN_EXTERN_C()
+// 初始化object_buckets数组
 ZEND_API void zend_objects_store_init(zend_objects_store *objects, zend_uint init_size);
+// 仅仅是释放object_buckets数组空间, 没有调用每个数组元素的 析构 函数.
 ZEND_API void zend_objects_store_call_destructors(zend_objects_store *objects TSRMLS_DC);
+// 
 ZEND_API void zend_objects_store_mark_destructed(zend_objects_store *objects TSRMLS_DC);
 ZEND_API void zend_objects_store_destroy(zend_objects_store *objects);
+// 释放每个元素的空间, 应该是在析构后调用的.
+ZEND_API void zend_objects_store_free_object_storage(zend_objects_store *objects TSRMLS_DC);
 
 /* Store API functions */
 ZEND_API zend_object_handle zend_objects_store_put(void *object, zend_objects_store_dtor_t dtor, zend_objects_free_object_storage_t storage, zend_objects_store_clone_t clone TSRMLS_DC);
 
+// 这两个增应用的纯操作, 没有 有效性 是否越界 的检查.
 ZEND_API void zend_objects_store_add_ref(zval *object TSRMLS_DC);
-ZEND_API void zend_objects_store_del_ref(zval *object TSRMLS_DC);
 ZEND_API void zend_objects_store_add_ref_by_handle(zend_object_handle handle TSRMLS_DC);
+
+ZEND_API void zend_objects_store_del_ref(zval *object TSRMLS_DC);
 ZEND_API void zend_objects_store_del_ref_by_handle_ex(zend_object_handle handle, const zend_object_handlers *handlers TSRMLS_DC);
+
 static inline void zend_objects_store_del_ref_by_handle(zend_object_handle handle TSRMLS_DC) {
 	zend_objects_store_del_ref_by_handle_ex(handle, NULL TSRMLS_CC);
 }
+
 ZEND_API zend_uint zend_objects_store_get_refcount(zval *object TSRMLS_DC);
 ZEND_API zend_object_value zend_objects_store_clone_obj(zval *object TSRMLS_DC);
 ZEND_API void *zend_object_store_get_object(const zval *object TSRMLS_DC);
@@ -78,8 +99,6 @@ ZEND_API void *zend_object_store_get_object_by_handle(zend_object_handle handle 
 /* See comment in zend_objects_API.c before you use this */
 ZEND_API void zend_object_store_set_object(zval *zobject, void *object TSRMLS_DC);
 ZEND_API void zend_object_store_ctor_failed(zval *zobject TSRMLS_DC);
-
-ZEND_API void zend_objects_store_free_object_storage(zend_objects_store *objects TSRMLS_DC);
 
 #define ZEND_OBJECTS_STORE_HANDLERS zend_objects_store_add_ref, zend_objects_store_del_ref, zend_objects_store_clone_obj
 

@@ -30,6 +30,7 @@
 ZEND_API void zend_objects_store_init(zend_objects_store *objects, zend_uint init_size)
 {
 	objects->object_buckets = (zend_object_store_bucket *) emalloc(init_size * sizeof(zend_object_store_bucket));
+	// 我勒个去
 	objects->top = 1; /* Skip 0 so that handles are true */
 	objects->size = init_size;
 	objects->free_list_head = -1;
@@ -55,6 +56,9 @@ ZEND_API void zend_objects_store_call_destructors(zend_objects_store *objects TS
 				if (obj->dtor && obj->object) {
 					obj->refcount++;
 					obj->dtor(obj->object, i TSRMLS_CC);
+					// 这一句是什么意思? 为什么这么写?
+					// obj不就引用的这个值吗?
+					// 然后对象已经被释放了, 还维护这个rc什么意思?
 					obj = &objects->object_buckets[i].bucket.obj;
 					obj->refcount--;
 				}
@@ -63,6 +67,10 @@ ZEND_API void zend_objects_store_call_destructors(zend_objects_store *objects TS
 	}
 }
 
+// 这又是什么逻辑??
+// valid字段什么含义?
+// 看样子是设置destructor_called字段, 但是这个字段在析构的时候不是设置了吗?
+// 这里有什么特殊的用途吗?
 ZEND_API void zend_objects_store_mark_destructed(zend_objects_store *objects TSRMLS_DC)
 {
 	zend_uint i;
@@ -101,19 +109,23 @@ ZEND_API void zend_objects_store_free_object_storage(zend_objects_store *objects
 
 ZEND_API zend_object_handle zend_objects_store_put(void *object, zend_objects_store_dtor_t dtor, zend_objects_free_object_storage_t free_storage, zend_objects_store_clone_t clone TSRMLS_DC)
 {
+	// 对应的idx句柄
 	zend_object_handle handle;
 	struct _store_object *obj;
 
+	// 优先使用free-list列表中的元素
 	if (EG(objects_store).free_list_head != -1) {
 		handle = EG(objects_store).free_list_head;
 		EG(objects_store).free_list_head = EG(objects_store).object_buckets[handle].bucket.free_list.next;
 	} else {
+		// 空间不够则double之
 		if (EG(objects_store).top == EG(objects_store).size) {
 			EG(objects_store).size <<= 1;
 			EG(objects_store).object_buckets = (zend_object_store_bucket *) erealloc(EG(objects_store).object_buckets, EG(objects_store).size * sizeof(zend_object_store_bucket));
 		}
 		handle = EG(objects_store).top++;
 	}
+	// 拿到了选定的handle
 	obj = &EG(objects_store).object_buckets[handle].bucket.obj;
 	EG(objects_store).object_buckets[handle].destructor_called = 0;
 	EG(objects_store).object_buckets[handle].valid = 1;
@@ -121,9 +133,12 @@ ZEND_API zend_object_handle zend_objects_store_put(void *object, zend_objects_st
 	obj->refcount = 1;
 	GC_OBJ_INIT(obj);
 	obj->object = object;
+	// 这里是有默认析构函数的.
 	obj->dtor = dtor?dtor:(zend_objects_store_dtor_t)zend_objects_destroy_object;
+	// 这个字段不考虑传入空吗?
 	obj->free_storage = free_storage;
 	obj->clone = clone;
+	// NULL, 不弄点啥?
 	obj->handlers = NULL;
 
 #if ZEND_DEBUG_OBJECTS
@@ -211,6 +226,7 @@ ZEND_API void zend_objects_store_del_ref_by_handle_ex(zend_object_handle handle,
 			}
 			
 			/* re-read the object from the object store as the store might have been reallocated in the dtor */
+			// 这是说析构函数里可能做了内存释放相关的操作?
 			obj = &EG(objects_store).object_buckets[handle].bucket.obj;
 
 			if (obj->refcount == 1) {
@@ -251,8 +267,10 @@ ZEND_API zend_object_value zend_objects_store_clone_obj(zval *zobject TSRMLS_DC)
 
 	obj = &EG(objects_store).object_buckets[handle].bucket.obj;
 
+	// 只有有clone句柄的对象才能clone
 	if (obj->clone == NULL) {
 		zend_error(E_CORE_ERROR, "Trying to clone uncloneable object of class %s", Z_OBJCE_P(zobject)->name);
+		// 可以继续?
 	}
 
 	obj->clone(obj->object, &new_object TSRMLS_CC);

@@ -135,6 +135,7 @@ ZEND_API zend_object_value zend_objects_new(zend_object **object, zend_class_ent
 	*object = emalloc(sizeof(zend_object));
 	(*object)->ce = class_type;
 	// 放入zend_object并返回一个idx
+	// zend_objects_store_put(object, 析构, 释放空间, clone接口);
 	retval.handle = zend_objects_store_put(*object, (zend_objects_store_dtor_t) zend_objects_destroy_object, (zend_objects_free_object_storage_t) zend_objects_free_object_storage, NULL TSRMLS_CC);
 	retval.handlers = &std_object_handlers;
 	(*object)->guards = NULL;

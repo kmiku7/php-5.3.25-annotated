@@ -253,6 +253,7 @@ struct _zend_executor_globals {
 	HashTable *ini_directives;
 	HashTable *modified_ini_directives;
 
+	// 对象池
 	zend_objects_store objects_store;
 	zval *exception, *prev_exception;
 	zend_op *opline_before_exception;
