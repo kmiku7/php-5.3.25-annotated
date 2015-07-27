@@ -299,7 +299,10 @@ typedef struct _zend_guard {
 } zend_guard;
 
 typedef struct _zend_object {
+	// 指回到class-entry，即具体的类型。
+	// 这里的 ce::handlers 会跟 zend_object_value::handlers 有不一致吗？ 允许不一致吗？
 	zend_class_entry *ce;
+	// hash表保存对象的属性。
 	HashTable *properties;
 	HashTable *guards; /* protects from __get/__set ... recursion */
 } zend_object;
@@ -491,6 +494,8 @@ struct _zend_class_entry {
 
 	/* handlers */
 	// 难道也分 空间分配， 数据初始化两步？
+	// 类声明者可以自定义object对象模板的构造过程，即劫持该函数
+	// 可以做的事情参考_object_and_properties_init(), 返回一个struct zend_object_value
 	zend_object_value (*create_object)(zend_class_entry *class_type TSRMLS_DC);
 	zend_object_iterator *(*get_iterator)(zend_class_entry *ce, zval *object, int by_ref TSRMLS_DC);
 	int (*interface_gets_implemented)(zend_class_entry *iface, zend_class_entry *class_type TSRMLS_DC); /* a class implements this interface */

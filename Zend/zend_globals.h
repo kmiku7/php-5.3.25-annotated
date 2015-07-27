@@ -204,7 +204,10 @@ struct _zend_executor_globals {
 	HashTable *class_table;		/* class table */
 	HashTable *zend_constants;	/* constants table */
 
+	// 函数对应的定义空间
+	// 定义空间的嵌套关系表明了类继承的关系。
 	zend_class_entry *scope;
+	// 有继承的情况下，调用时限定的类名。
 	zend_class_entry *called_scope; /* Scope of the calling class */
 
 	// "this"指针? 怎么用? 怎么初始化?

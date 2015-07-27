@@ -1071,6 +1071,7 @@ ZEND_API int _object_and_properties_init(zval *arg, zend_class_entry *class_type
 	zval *tmp;
 	zend_object *object;
 
+	// 在一次进行是否可以实例化的检测.
 	if (class_type->ce_flags & (ZEND_ACC_INTERFACE|ZEND_ACC_IMPLICIT_ABSTRACT_CLASS|ZEND_ACC_EXPLICIT_ABSTRACT_CLASS)) {
 		char *what = class_type->ce_flags & ZEND_ACC_INTERFACE ? "interface" : "abstract class";
 		zend_error(E_ERROR, "Cannot instantiate %s %s", what, class_type->name);
@@ -1085,10 +1086,12 @@ ZEND_API int _object_and_properties_init(zval *arg, zend_class_entry *class_type
 			object->properties = properties;
 		} else {
 			ALLOC_HASHTABLE_REL(object->properties);
+			// 从 class_entry 拷贝properties的默认值。
 			zend_hash_init(object->properties, zend_hash_num_elements(&class_type->default_properties), NULL, ZVAL_PTR_DTOR, 0);
 			zend_hash_copy(object->properties, &class_type->default_properties, zval_copy_property_ctor(class_type), (void *) &tmp, sizeof(zval *));
 		}
 	} else {
+		// 用户自定义类可以劫持object对象的申请， 及属性的构造。
 		Z_OBJVAL_P(arg) = class_type->create_object(class_type TSRMLS_CC);
 	}
 	return SUCCESS;

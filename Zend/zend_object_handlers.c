@@ -1373,6 +1373,7 @@ int zend_std_get_closure(zval *obj, zend_class_entry **ce_ptr, zend_function **f
 }
 /* }}} */
 
+// 这里的方法都是获取魔术方法指针的方法。
 ZEND_API zend_object_handlers std_object_handlers = {
 	zend_objects_store_add_ref,				/* add_ref */
 	zend_objects_store_del_ref,				/* del_ref */

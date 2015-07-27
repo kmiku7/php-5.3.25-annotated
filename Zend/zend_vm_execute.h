@@ -481,13 +481,15 @@ static int ZEND_FASTCALL  ZEND_RECV_SPEC_HANDLER(ZEND_OPCODE_HANDLER_ARGS)
 	ZEND_VM_NEXT_OPCODE();
 }
 
+// $obj = new class(); 对应的语句。
 static int ZEND_FASTCALL  ZEND_NEW_SPEC_HANDLER(ZEND_OPCODE_HANDLER_ARGS)
 {
 	zend_op *opline = EX(opline);
 	zval *object_zval;
 	zend_function *constructor;
 
-	// interface & abstract class 是不能实例化的。
+	// 判断能否实例化.
+	// interface & abstract class 是不能实例化的.
 	if (EX_T(opline->op1.u.var).class_entry->ce_flags & (ZEND_ACC_INTERFACE|ZEND_ACC_IMPLICIT_ABSTRACT_CLASS|ZEND_ACC_EXPLICIT_ABSTRACT_CLASS)) {
 		char *class_type;
 
@@ -498,9 +500,13 @@ static int ZEND_FASTCALL  ZEND_NEW_SPEC_HANDLER(ZEND_OPCODE_HANDLER_ARGS)
 		}
 		zend_error_noreturn(E_ERROR, "Cannot instantiate %s %s", class_type,  EX_T(opline->op1.u.var).class_entry->name);
 	}
-	ALLOC_ZVAL(object_zval);
+	
 	// 对象初始化
+	// 分配zval结构体空间
+	ALLOC_ZVAL(object_zval);
+	// 对象初始化, 不包括构造函数的调用.
 	object_init_ex(object_zval, EX_T(opline->op1.u.var).class_entry);
+	// 设置引用计数
 	INIT_PZVAL(object_zval);
 
 	constructor = Z_OBJ_HT_P(object_zval)->get_constructor(object_zval TSRMLS_CC);

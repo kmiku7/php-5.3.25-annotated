@@ -56,8 +56,16 @@ typedef struct _zend_object_handlers zend_object_handlers;
 
 typedef struct _zend_object_value {
 	// unsigned, 对象池索引
+	// 整数类型, 具体对象在一个全局结构里维护.
+	// EG(object_store).object_buckets
+	// 需要hash过程？
+	// 具体数据结构是 struct _zend_object
 	zend_object_handle handle;
 
+	// 这个指针值是类唯一的还是对象唯一的？仅仅是加快存取做的缓存？
+	// http://www.lai18.com/content/425180.html
+	// 根据这里的描述，在object创建的时候初始化，那么应该是对象唯一的
+	// 然后对象运行时可能做出修改？how？
 	zend_object_handlers *handlers;
 } zend_object_value;
 

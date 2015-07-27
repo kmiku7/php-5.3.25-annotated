@@ -1559,6 +1559,7 @@ check_fetch_type:
 			}
 			return EG(called_scope);
 		case ZEND_FETCH_CLASS_AUTO: {
+				// 查询方式有两种, 一种ENUM字段选择,另一种字符串关键字,然后使用下面这个函数转成ENNUM，然后goto重新处理一遍。
 				fetch_type = zend_get_class_fetch_type(class_name, class_name_len);
 				if (fetch_type!=ZEND_FETCH_CLASS_DEFAULT) {
 					goto check_fetch_type;
