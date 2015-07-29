@@ -66,6 +66,8 @@ typedef struct _zend_object_value {
 	// http://www.lai18.com/content/425180.html
 	// 根据这里的描述，在object创建的时候初始化，那么应该是对象唯一的
 	// 然后对象运行时可能做出修改？how？
+	// 见 file: zend_objects.c	line: 140
+	//		retval.handlers = &std_object_handlers;
 	zend_object_handlers *handlers;
 } zend_object_value;
 

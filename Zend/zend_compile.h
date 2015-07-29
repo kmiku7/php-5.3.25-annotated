@@ -137,6 +137,8 @@ typedef struct _zend_try_catch_element {
 
 /* method flags (visibility) */
 /* The order of those must be kept - public < protected < private */
+// 权限控制
+// 意义不同, 常量值也应尽量避免不同.
 #define ZEND_ACC_PUBLIC		0x100
 #define ZEND_ACC_PROTECTED	0x200
 #define ZEND_ACC_PRIVATE	0x400
@@ -172,6 +174,7 @@ char *zend_visibility_string(zend_uint fn_flags);
 
 typedef struct _zend_property_info {
 	zend_uint flags;
+	// 这里是mangle之后的名字，以及缓存的hash value
 	char *name;
 	int name_length;
 	ulong h;

@@ -29,6 +29,7 @@
 ZEND_API int le_index_ptr;
 
 /* true global */
+// 做什么用的？
 static HashTable list_destructors;
 
 
@@ -289,7 +290,7 @@ ZEND_API int zend_register_list_destructors(void (*ld)(void *), void (*pld)(void
 	return list_destructors.nNextFreeElement-1;
 }
 
-
+// 注册资源类型
 ZEND_API int zend_register_list_destructors_ex(rsrc_dtor_func_t ld, rsrc_dtor_func_t pld, char *type_name, int module_number)
 {
 	zend_rsrc_list_dtors_entry lde;

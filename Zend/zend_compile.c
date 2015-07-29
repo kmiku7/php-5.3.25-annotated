@@ -2823,6 +2823,7 @@ ZEND_API void zend_do_inherit_interfaces(zend_class_entry *ce, const zend_class_
 	}
 	ce_num = ce->num_interfaces;
 
+	// 导致这种区别的原因是?
 	if (ce->type == ZEND_INTERNAL_CLASS) {
 		ce->interfaces = (zend_class_entry **) realloc(ce->interfaces, sizeof(zend_class_entry *) * (ce_num + if_num));
 	} else {
@@ -2830,6 +2831,7 @@ ZEND_API void zend_do_inherit_interfaces(zend_class_entry *ce, const zend_class_
 	}
 
 	/* Inherit the interfaces, only if they're not already inherited by the class */
+	// 二层循环进行merge
 	while (if_num--) {
 		entry = iface->interfaces[if_num];
 		for (i = 0; i < ce_num; i++) {
@@ -2878,6 +2880,7 @@ ZEND_API void zend_do_inheritance(zend_class_entry *ce, zend_class_entry *parent
 
 	ce->parent = parent_ce;
 	/* Copy serialize/unserialize callbacks */
+	// 继承父类的 序列化/反序列化 函数
 	if (!ce->serialize) {
 		ce->serialize   = parent_ce->serialize;
 	}
@@ -2886,6 +2889,7 @@ ZEND_API void zend_do_inheritance(zend_class_entry *ce, zend_class_entry *parent
 	}
 
 	/* Inherit interfaces */
+	// 处理接口实现.
 	zend_do_inherit_interfaces(ce, parent_ce TSRMLS_CC);
 
 	/* Inherit properties */
@@ -3041,6 +3045,7 @@ ZEND_API zend_class_entry *do_bind_inherited_class(const zend_op *opline, HashTa
 	zend_class_entry *ce, **pce;
 	int found_ce;
 
+	// 怎么可能会有类的ce呢? 此时不才声明吗?
 	found_ce = zend_hash_find(class_table, opline->op1.u.constant.value.str.val, opline->op1.u.constant.value.str.len, (void **) &pce);
 
 	if (found_ce == FAILURE) {
@@ -3061,6 +3066,7 @@ ZEND_API zend_class_entry *do_bind_inherited_class(const zend_op *opline, HashTa
 		zend_error(E_COMPILE_ERROR, "Class %s cannot extend from interface %s", ce->name, parent_ce->name);
 	}
 
+	// 继承处理
 	zend_do_inheritance(ce, parent_ce TSRMLS_CC);
 
 	ce->refcount++;
@@ -3073,6 +3079,8 @@ ZEND_API zend_class_entry *do_bind_inherited_class(const zend_op *opline, HashTa
 }
 /* }}} */
 
+// 尝试进行早期绑定（编译阶段）
+// 声明顺序影响因素很大
 void zend_do_early_binding(TSRMLS_D) /* {{{ */
 {
 	zend_op *opline = &CG(active_op_array)->opcodes[CG(active_op_array)->last-1];
@@ -3101,9 +3109,11 @@ void zend_do_early_binding(TSRMLS_D) /* {{{ */
 				zval *parent_name = &fetch_class_opline->op2.u.constant;
 				zend_class_entry **pce;
 
+				// class-table里尝试查找类(?)
 				if ((zend_lookup_class(Z_STRVAL_P(parent_name), Z_STRLEN_P(parent_name), &pce TSRMLS_CC) == FAILURE) ||
 						((CG(compiler_options) & ZEND_COMPILE_IGNORE_INTERNAL_CLASSES) &&
 						((*pce)->type == ZEND_INTERNAL_CLASS))) {
+					// 根据这里的代码来看, 延迟绑定情况下, 会有不同opcode.
 					if (CG(compiler_options) & ZEND_COMPILE_DELAYED_BINDING) {
 						zend_uint *opline_num = &CG(active_op_array)->early_binding;
 
@@ -3496,6 +3506,7 @@ void zend_do_begin_class_declaration(const znode *class_token, znode *class_name
 	opline->op2.u.constant.type = IS_STRING;
 	Z_SET_REFCOUNT(opline->op2.u.constant, 1);
 
+	// 使用了继承声明的指令，运行时的行为。
 	if (doing_inheritance) {
 		opline->extended_value = parent_class_name->u.var;
 		opline->opcode = ZEND_DECLARE_INHERITED_CLASS;

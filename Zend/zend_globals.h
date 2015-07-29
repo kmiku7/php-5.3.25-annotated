@@ -230,7 +230,10 @@ struct _zend_executor_globals {
 	OSVERSIONINFOEX windows_version_info;
 #endif
 
+	// 保存resource对象
+	// request生命周期
 	HashTable regular_list;
+	// 进程生命周期
 	HashTable persistent_list;
 
 	zend_vm_stack argument_stack;

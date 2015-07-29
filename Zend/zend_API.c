@@ -2260,6 +2260,8 @@ ZEND_API void zend_class_implements(zend_class_entry *class_entry TSRMLS_DC, int
 
 /* A class that contains at least one abstract method automatically becomes an abstract class.
  */
+// struct orig_class_entry 会进行拷贝
+// 然后返回内部使用的结构体的指针
 ZEND_API zend_class_entry *zend_register_internal_class(zend_class_entry *orig_class_entry TSRMLS_DC) /* {{{ */
 {
 	return do_register_internal_class(orig_class_entry, 0 TSRMLS_CC);

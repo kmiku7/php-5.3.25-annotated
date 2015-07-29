@@ -163,6 +163,8 @@ static int zend_verify_property_access(zend_property_info *property_info, zend_c
 	switch (property_info->flags & ZEND_ACC_PPP_MASK) {
 		case ZEND_ACC_PUBLIC:
 			return 1;
+			
+			// 同类对象间可以互相方位private & protected 的对象。
 		case ZEND_ACC_PROTECTED:
 			return zend_check_protected(property_info->ce, EG(scope));
 		case ZEND_ACC_PRIVATE:
@@ -321,6 +323,8 @@ static int zend_get_property_guard(zend_object *zobj, zend_property_info *proper
 }
 /* }}} */
 
+// 查找并读取成员变量
+// member保存属性名
 zval *zend_std_read_property(zval *object, zval *member, int type TSRMLS_DC) /* {{{ */
 {
 	zend_object *zobj;
@@ -347,11 +351,17 @@ zval *zend_std_read_property(zval *object, zval *member, int type TSRMLS_DC) /* 
 #endif
 
 	/* make zend_get_property_info silent if we have getter - we may want to use it */
+	// 从class-entry结构体查找对应的属性信息
+	// 包含: ?
 	property_info = zend_get_property_info(zobj->ce, member, (zobj->ce->__get != NULL) TSRMLS_CC);
 
+	// zobj 对应 object:zval 里保存的object对象
+	// 也就是member保存的plain名字, 不加任何权限限定符, property_info->name 保存的是变换后的名字
 	if (!property_info || zend_hash_quick_find(zobj->properties, property_info->name, property_info->name_length+1, property_info->h, (void **) &retval) == FAILURE) {
+		// 查找失败的处理
 		zend_guard *guard = NULL;
 
+		// 调用魔术方法
 		if (zobj->ce->__get &&
 		    zend_get_property_guard(zobj, property_info, member, &guard) == SUCCESS &&
 		    !guard->in_get) {
@@ -405,6 +415,8 @@ zval *zend_std_read_property(zval *object, zval *member, int type TSRMLS_DC) /* 
 			retval = &EG(uninitialized_zval_ptr);
 		}
 	}
+	
+	// 查找成功
 	if (tmp_member) {
 		Z_ADDREF_PP(retval);
 		zval_ptr_dtor(&tmp_member);

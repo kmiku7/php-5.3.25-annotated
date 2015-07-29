@@ -18,6 +18,7 @@
 */
 
 /* $Id$ */
+// 
 
 #ifndef ZEND_LIST_H
 #define ZEND_LIST_H
@@ -30,8 +31,10 @@ BEGIN_EXTERN_C()
 #define ZEND_RESOURCE_LIST_TYPE_STD	1
 #define ZEND_RESOURCE_LIST_TYPE_EX	2
 
+// resource类型
 typedef struct _zend_rsrc_list_entry {
 	void *ptr;
+	// 这个值如何确定？谁来分配？
 	int type;
 	int refcount;
 } zend_rsrc_list_entry;
@@ -39,6 +42,7 @@ typedef struct _zend_rsrc_list_entry {
 typedef void (*rsrc_dtor_func_t)(zend_rsrc_list_entry *rsrc TSRMLS_DC);
 #define ZEND_RSRC_DTOR_FUNC(name)		void name(zend_rsrc_list_entry *rsrc TSRMLS_DC)
 
+// 资源类型
 typedef struct _zend_rsrc_list_dtors_entry {
 	/* old style destructors */
 	void (*list_dtor)(void *);
@@ -58,11 +62,13 @@ typedef struct _zend_rsrc_list_dtors_entry {
 
 #define register_list_destructors(ld, pld) zend_register_list_destructors((void (*)(void *))ld, (void (*)(void *))pld, module_number);
 ZEND_API int zend_register_list_destructors(void (*ld)(void *), void (*pld)(void *), int module_number);
+// 两个析构的参数类型是相同的
 ZEND_API int zend_register_list_destructors_ex(rsrc_dtor_func_t ld, rsrc_dtor_func_t pld, char *type_name, int module_number);
 
 void list_entry_destructor(void *ptr);
 void plist_entry_destructor(void *ptr);
 
+// 几个接口
 void zend_clean_module_rsrc_dtors(int module_number TSRMLS_DC);
 int zend_init_rsrc_list(TSRMLS_D);
 int zend_init_rsrc_plist(TSRMLS_D);
@@ -80,6 +86,9 @@ ZEND_API void *_zend_list_find(int id, int *type TSRMLS_DC);
 #define zend_list_find(id, type)	_zend_list_find(id, type TSRMLS_CC)
 
 ZEND_API int zend_register_resource(zval *rsrc_result, void *rsrc_pointer, int rsrc_type);
+
+// 可以取多个
+// 找到passed_id参数传入的resource对应的resource-object
 ZEND_API void *zend_fetch_resource(zval **passed_id TSRMLS_DC, int default_id, char *resource_type_name, int *found_resource_type, int num_resource_types, ...);
 
 ZEND_API char *zend_rsrc_list_get_rsrc_type(int resource TSRMLS_DC);
@@ -87,11 +96,20 @@ ZEND_API int zend_fetch_list_dtor_id(char *type_name);
 
 extern ZEND_API int le_index_ptr;  /* list entry type for index pointers */
 
+// 确认指针非NULL
 #define ZEND_VERIFY_RESOURCE(rsrc)		\
 	if (!rsrc) {						\
 		RETURN_FALSE;					\
 	}
-
+// ZEND_FETCH_RESOURCE(fp,FILE*,&file_resource,-1,PHP_SAMPLE_DESCRIPTOR_RES_NAME,le_sample_descriptor);
+// ZEND_FETCH_RESOURCE(
+//				rsrc, 					保存 zend_rsrc_list_entry::ptr
+//				rsrc_type, 				类型转换
+//				passed_id, 				*zval
+//				default_id, 			-1
+//	   			resource_type_name, 	string
+//				resource_type			resource-id
+//		)
 #define ZEND_FETCH_RESOURCE(rsrc, rsrc_type, passed_id, default_id, resource_type_name, resource_type)	\
 	rsrc = (rsrc_type) zend_fetch_resource(passed_id TSRMLS_CC, default_id, resource_type_name, NULL, 1, resource_type);	\
 	ZEND_VERIFY_RESOURCE(rsrc);

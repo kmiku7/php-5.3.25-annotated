@@ -505,6 +505,7 @@ struct _zend_class_entry {
 	int (*serialize)(zval *object, unsigned char **buffer, zend_uint *buf_len, zend_serialize_data *data TSRMLS_DC);
 	int (*unserialize)(zval **object, zend_class_entry *ce, const unsigned char *buf, zend_uint buf_len, zend_unserialize_data *data TSRMLS_DC);
 
+	// 类实现的接口
 	zend_class_entry **interfaces;
 	zend_uint num_interfaces;
 

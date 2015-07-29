@@ -167,9 +167,11 @@ namespace_name:
 
 top_statement:
 		statement						{ zend_verify_namespace(TSRMLS_C); }
+		// top level！
 	|	function_declaration_statement	{ zend_verify_namespace(TSRMLS_C); zend_do_early_binding(TSRMLS_C); }
 	|	class_declaration_statement		{ zend_verify_namespace(TSRMLS_C); zend_do_early_binding(TSRMLS_C); }
 	|	T_HALT_COMPILER '(' ')' ';'		{ zend_do_halt_compiler_register(TSRMLS_C); YYACCEPT; }
+	// nanespace 的几种类型
 	|	T_NAMESPACE namespace_name ';'	{ zend_do_begin_namespace(&$2, 0 TSRMLS_CC); }
 	|	T_NAMESPACE namespace_name '{'	{ zend_do_begin_namespace(&$2, 1 TSRMLS_CC); }
 		top_statement_list '}'		    { zend_do_end_namespace(TSRMLS_C); }
@@ -541,6 +543,7 @@ variable_modifiers:
 ;
 
 method_modifiers:
+	// 默认public的来源
 		/* empty */							{ Z_LVAL($$.u.constant) = ZEND_ACC_PUBLIC; }
 	|	non_empty_member_modifiers			{ $$ = $1;  if (!(Z_LVAL($$.u.constant) & ZEND_ACC_PPP_MASK)) { Z_LVAL($$.u.constant) |= ZEND_ACC_PUBLIC; } }
 ;
