@@ -1054,6 +1054,7 @@ int main(int argc, char *argv[])
 			php_optind++;
 		}
 		if (script_file) {
+			// 这里已经使用fopen打开了文件
 			if (cli_seek_file_begin(&file_handle, script_file, &lineno TSRMLS_CC) != SUCCESS) {
 				goto err;
 			} else {

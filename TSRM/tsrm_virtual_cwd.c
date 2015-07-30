@@ -760,6 +760,7 @@ CWD_API realpath_cache_bucket** realpath_cache_get_buckets(TSRMLS_D)
 #undef LINK_MAX
 #define LINK_MAX 32
 
+// 规范目录名, 方便做cache(?)
 static int tsrm_realpath_r(char *path, int start, int len, int *ll, time_t *t, int use_realpath, int is_dir, int *link_is_dir TSRMLS_DC) /* {{{ */
 {
 	int i, j, save;
@@ -784,6 +785,7 @@ static int tsrm_realpath_r(char *path, int start, int len, int *ll, time_t *t, i
 		}
 
 		i = len;
+		// 从后开始找到slash的位置
 		while (i > start && !IS_SLASH(path[i-1])) {
 			i--;
 		}
@@ -791,11 +793,13 @@ static int tsrm_realpath_r(char *path, int start, int len, int *ll, time_t *t, i
 		if (i == len ||
 			(i == len - 1 && path[i] == '.')) {
 			/* remove double slashes and '.' */
+			// 指定的是目录
 			len = i - 1;
 			is_dir = 1;
 			continue;
 		} else if (i == len - 2 && path[i] == '.' && path[i+1] == '.') {
 			/* remove '..' and previous directory */
+			// 上一层目录
 			is_dir = 1;
 			if (link_is_dir) {
 				*link_is_dir = 1;
@@ -803,6 +807,7 @@ static int tsrm_realpath_r(char *path, int start, int len, int *ll, time_t *t, i
 			if (i - 1 <= start) {
 				return start ? start : len;
 			}
+			// 使用递归
 			j = tsrm_realpath_r(path, start, i-1, ll, t, use_realpath, 1, NULL TSRMLS_CC);
 			if (j > start) {
 				j--;
@@ -1161,6 +1166,7 @@ static int tsrm_realpath_r(char *path, int start, int len, int *ll, time_t *t, i
 
 /* Resolve path relatively to state and put the real path into state */
 /* returns 0 for ok, 1 for error */
+// virtual_file_ex(&new_state, path, NULL, CWD_REALPATH)
 CWD_API int virtual_file_ex(cwd_state *state, const char *path, verify_path_func verify_path, int use_realpath) /* {{{ */
 {
 	int path_length = strlen(path);
@@ -1199,6 +1205,7 @@ CWD_API int virtual_file_ex(cwd_state *state, const char *path, verify_path_func
 			start = 0;
 			memcpy(resolved_path , path, path_length + 1);
 		} else {
+			// stat.cwd + path, 路径拼接.
 			int state_cwd_length = state->cwd_length;
 
 #ifdef TSRM_WIN32
@@ -1249,6 +1256,7 @@ CWD_API int virtual_file_ex(cwd_state *state, const char *path, verify_path_func
 			path_length++;
 		} else
 #endif
+		// 绝对路径则原样拷贝
 		memcpy(resolved_path, path, path_length + 1);
 	}
 
@@ -1290,6 +1298,8 @@ CWD_API int virtual_file_ex(cwd_state *state, const char *path, verify_path_func
 #elif defined(NETWARE)
 	if (IS_ABSOLUTE_PATH(resolved_path, path_length)) {
 		/* skip VOLUME name */
+		// 这有问题吧
+		// 看不懂啊
 		start = 0;
 		while (start != ':') {
 			if (resolved_path[start] == 0) return -1;
@@ -1943,6 +1953,7 @@ CWD_API char *tsrm_realpath(const char *path, char *real_path TSRMLS_DC) /* {{{ 
 
 	/* realpath("") returns CWD */
 	if (!*path) {
+		// path为NULL 
 		new_state.cwd = (char*)malloc(1);
 		if (new_state.cwd == NULL) {
 			return NULL;
@@ -1954,9 +1965,12 @@ CWD_API char *tsrm_realpath(const char *path, char *real_path TSRMLS_DC) /* {{{ 
 		}
 	} else if (!IS_ABSOLUTE_PATH(path, strlen(path)) &&
 					VCWD_GETCWD(cwd, MAXPATHLEN)) {
+		// 不是绝对路径
+		// and后面的条件就忽略吧, 会有用?
 		new_state.cwd = strdup(cwd);
 		new_state.cwd_length = strlen(cwd);
 	} else {
+		// 绝对路径
 		new_state.cwd = (char*)malloc(1);
 		if (new_state.cwd == NULL) {
 			return NULL;
