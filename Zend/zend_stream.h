@@ -33,6 +33,7 @@ typedef void   (*zend_stream_closer_t)(void* handle TSRMLS_DC);
 
 #define ZEND_MMAP_AHEAD 32 
 
+// 几种句柄类型
 typedef enum {
 	ZEND_HANDLE_FILENAME,
 	ZEND_HANDLE_FD,

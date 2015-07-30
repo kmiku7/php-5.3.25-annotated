@@ -2235,6 +2235,7 @@ void php_module_shutdown(TSRMLS_D)
 
 /* {{{ php_execute_script
  */
+// 执行脚本
 PHPAPI int php_execute_script(zend_file_handle *primary_file TSRMLS_DC)
 {
 	zend_file_handle *prepend_file_p, *append_file_p;

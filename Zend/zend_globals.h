@@ -133,7 +133,9 @@ struct _zend_compiler_globals {
 
 	zend_uint compiler_options; /* set of ZEND_COMPILE_* constants */
 
+	// namespace 相关字段
 	zval      *current_namespace;
+	// 保存别名的结构
 	HashTable *current_import;
 	zend_bool  in_namespace;
 	zend_bool  has_bracketed_namespaces;

@@ -1579,6 +1579,7 @@ int zend_do_begin_function_call(znode *function_name, zend_bool check_namespace 
 	char *lcname;
 	char *is_compound = memchr(Z_STRVAL(function_name->u.constant), '\\', Z_STRLEN(function_name->u.constant));
 
+	// 会修改function_name值？
 	zend_resolve_non_class_name(function_name, check_namespace TSRMLS_CC);
 
 	if (check_namespace && CG(current_namespace) && !is_compound) {
@@ -5166,11 +5167,14 @@ void zend_do_build_namespace_name(znode *result, znode *prefix, znode *name TSRM
 }
 /* }}} */
 
+// 注意第二个参数
 void zend_do_begin_namespace(const znode *name, zend_bool with_bracket TSRMLS_DC) /* {{{ */
 {
 	char *lcname;
 
 	/* handle mixed syntax declaration or nested namespaces */
+	// 嵌套的检测.
+	// 但是限制是有其他设计原因导致的.
 	if (!CG(has_bracketed_namespaces)) {
 		if (CG(current_namespace)) {
 			/* previous namespace declarations were unbracketed */
@@ -5243,6 +5247,7 @@ void zend_do_begin_namespace(const znode *name, zend_bool with_bracket TSRMLS_DC
 }
 /* }}} */
 
+// 只做了新名字的重复检查确认
 void zend_do_use(znode *ns_name, znode *new_name, int is_global TSRMLS_DC) /* {{{ */
 {
 	char *lcname;

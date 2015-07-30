@@ -544,6 +544,8 @@ zend_op_array *compile_string(zval *source_string, char *filename TSRMLS_DC)
 		} else {
 			zend_do_return(NULL, 0 TSRMLS_CC);
 			CG(active_op_array) = original_active_op_array;
+			// 第二次遍历
+			// general-opcode -> concrete-opcode, with parameters type.
 			pass_two(op_array TSRMLS_CC);
 			zend_release_labels(TSRMLS_C);
 			retval = op_array;

@@ -610,6 +610,7 @@ static int cli_seek_file_begin(zend_file_handle *file_handle, char *script_file,
 	file_handle->filename = script_file;
 
 	/* #!php support */
+	// 处理掉 #! 开头的行， 不是给php-cli使用的，保持同其他工具的兼容性。
 	c = fgetc(file_handle->handle.fp);
 	if (c == '#' && (c = fgetc(file_handle->handle.fp)) == '!') {
 		while (c != '\n' && c != '\r' && c != EOF) {

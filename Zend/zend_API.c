@@ -3582,6 +3582,7 @@ ZEND_API zval *zend_read_property(zend_class_entry *scope, zval *object, char *n
 
 	EG(scope) = scope;
 
+	// 多态，使用类自己提供的read_property方法
 	if (!Z_OBJ_HT_P(object)->read_property) {
 		char *class_name;
 		zend_uint class_name_len;
